@@ -151,8 +151,8 @@ def main() -> None:
 
     print("Wrote", OUT)
     print("Cells authored:", sum(len(t) for t in scenes.values()))
-    print("Notes missing explicit duration (defaulted to %.2f): %d" % (DEFAULT_DUR, total_missing))
-    print("Malformed modify ops skipped (bridge-filter parity): %d" % _skipped)
+    print(f"Notes missing explicit duration (defaulted to {DEFAULT_DUR:.2f}): {total_missing}")
+    print(f"Malformed modify ops skipped (bridge-filter parity): {_skipped}")
     print("\nPer-cell fold:")
     print("\n".join(report))
 
