@@ -40,8 +40,7 @@ CLEANED = HERE / "cleaned_specs.json"
 STRUCTURE = HERE / "structure.yml"
 OUT = HERE / "arrangement.yml"
 
-DRUM_KEYS = ["R5:drums", "R6:drums", "R7:drums", "R8:drums",
-             "R9:drums", "R10:drums", "R11:drums"]
+DRUM_KEYS = ["R5:drums", "R6:drums", "R7:drums", "R8:drums", "R9:drums", "R10:drums", "R11:drums"]
 DRUM_TRACKS = ["D_kick", "D_snare", "D_hat", "D_clap", "D_perc", "D_drill_roll"]
 DRUM_SCENE = "INTRO"  # scenes[0] / "clip slot 0" -- ASSUMPTION, see module docstring
 DEFAULT_DUR = 0.25
@@ -81,12 +80,17 @@ def fold(blocks: list[dict]) -> tuple[list[dict], int]:
 
 
 def to_clip(notes: list[dict]) -> ClipSpec:
-    return ClipSpec(notes=[
-        NoteSpec(pitch=n["pitch"], start=n["beat"],
-                 duration=n.get("duration", DEFAULT_DUR),
-                 velocity=n.get("velocity", 100.0))
-        for n in notes
-    ])
+    return ClipSpec(
+        notes=[
+            NoteSpec(
+                pitch=n["pitch"],
+                start=n["beat"],
+                duration=n.get("duration", DEFAULT_DUR),
+                velocity=n.get("velocity", 100.0),
+            )
+            for n in notes
+        ]
+    )
 
 
 def main() -> None:
@@ -106,8 +110,14 @@ def main() -> None:
         report.append(f"  {scene:12} / {track:14} : {len(notes):3} notes{flag}")
 
     # --- scene-keyed keys: K_piano, S_808_clean, A_server_hum, F_* -----------
-    for key in ["R3:K_piano", "R12:S_808_clean", "R13:A_server_hum",
-                "R14:F_riser", "R15:F_impact", "R16:F_transition"]:
+    for key in [
+        "R3:K_piano",
+        "R12:S_808_clean",
+        "R13:A_server_hum",
+        "R14:F_riser",
+        "R15:F_impact",
+        "R16:F_transition",
+    ]:
         track = key.split(":", 1)[1]
         for blk in cs[key]:
             notes, miss = fold([blk])
@@ -116,8 +126,7 @@ def main() -> None:
 
     # --- drums: fold all passes per track, place in DRUM_SCENE ----------------
     for track in DRUM_TRACKS:
-        blocks = [blk for key in DRUM_KEYS for blk in cs.get(key, [])
-                  if blk.get("header") == track]
+        blocks = [blk for key in DRUM_KEYS for blk in cs.get(key, []) if blk.get("header") == track]
         notes, miss = fold(blocks)
         total_missing += miss
         place(DRUM_SCENE, track, notes)
