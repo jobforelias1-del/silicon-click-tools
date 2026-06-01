@@ -18,6 +18,7 @@ from sc_produce.audit import audit_project, configure_parser, run
 from sc_produce.models import (
     ArrangementSpec,
     ClipSpec,
+    CueSpec,
     NoteSpec,
     StructureSpec,
 )
@@ -289,6 +290,104 @@ def test_clean_arrangement_against_structure_passes(structure: StructureSpec) ->
     assert _errors(report) == []
     # A complete grid leaves no completeness warnings either.
     assert _warnings(report) == []
+
+
+# --------------------------------------------------------------------------- #
+# Audio-cue checks
+# --------------------------------------------------------------------------- #
+def test_audio_track_with_cues_is_clean(structure: StructureSpec) -> None:
+    """Audio cues on an audio track are valid -- the counterpart of MIDI on MIDI."""
+    arrangement = ArrangementSpec(
+        scenes={
+            "Intro": {
+                "A_server_hum": ClipSpec(
+                    cues=[CueSpec(sample="hum_01", beat=0.0, length=8.0, gain_db=-6.0)]
+                )
+            }
+        }
+    )
+
+    report = audit_project(arrangement, structure)
+
+    assert report.passed is True
+    assert any("cell ok (1 cues)" in f.message for f in report.findings)
+
+
+def test_midi_track_with_cues_is_error(structure: StructureSpec) -> None:
+    """Audio cues authored onto a MIDI track are rejected with the upstream fix."""
+    arrangement = ArrangementSpec(
+        scenes={"Intro": {"K_piano": ClipSpec(cues=[CueSpec(sample="x", beat=0.0, length=1.0)])}}
+    )
+
+    report = audit_project(arrangement, structure)
+
+    assert report.passed is False
+    assert any(
+        "MIDI track K_piano cannot hold audio cues" in msg and "re-type" in msg
+        for msg in _errors(report)
+    )
+
+
+def test_audio_midi_error_carries_upstream_fix(structure: StructureSpec) -> None:
+    """The audio-holds-MIDI finding names the fix (re-type / re-author)."""
+    arrangement = ArrangementSpec(
+        scenes={
+            "Intro": {
+                "A_server_hum": ClipSpec(
+                    notes=[NoteSpec(pitch="C3", start=0.0, duration=1.0, velocity=100)]
+                )
+            }
+        }
+    )
+
+    report = audit_project(arrangement, structure)
+
+    assert report.passed is False
+    assert any(
+        "re-type A_server_hum to 'midi'" in msg and "audio cues" in msg for msg in _errors(report)
+    )
+
+
+def test_cell_mixing_notes_and_cues_is_error(structure: StructureSpec) -> None:
+    """A single cell may not carry both MIDI notes and audio cues."""
+    arrangement = ArrangementSpec(
+        scenes={
+            "Intro": {
+                "D_kick": ClipSpec(
+                    notes=[NoteSpec(pitch="C1", start=0.0, duration=0.25, velocity=100)],
+                    cues=[CueSpec(sample="x", beat=0.0, length=1.0)],
+                )
+            }
+        }
+    )
+
+    report = audit_project(arrangement, structure)
+
+    assert report.passed is False
+    assert any("mixes MIDI notes and audio cues" in msg for msg in _errors(report))
+
+
+def test_cue_value_violations_are_errors(structure: StructureSpec) -> None:
+    """An empty sample, non-positive length, or negative beat are cue errors."""
+    arrangement = ArrangementSpec(
+        scenes={
+            "Intro": {
+                "A_server_hum": ClipSpec(
+                    cues=[
+                        CueSpec(sample="", beat=-1.0, length=0.0),
+                    ]
+                )
+            }
+        }
+    )
+
+    report = audit_project(arrangement, structure)
+
+    errors = _errors(report)
+    assert report.passed is False
+    assert any("empty sample" in msg for msg in errors)
+    assert any("cue length must be > 0" in msg for msg in errors)
+    assert any("cue beat must be >= 0" in msg for msg in errors)
 
 
 # --------------------------------------------------------------------------- #

@@ -31,6 +31,7 @@ from sc_produce.launcher import generate_launcher
 from sc_produce.models import (
     ArrangementSpec,
     ClipSpec,
+    CueSpec,
     NoteSpec,
     StructureSpec,
     TrackSpec,
@@ -318,6 +319,37 @@ def test_audio_track_cell_is_error_but_rest_applies(
     # The valid D_kick cell still applied.
     assert len(session.bridge.get_notes("D_kick", 0)) == 1
     assert any(f.severity is Severity.OK and f.track == "D_kick" for f in report.findings)
+
+
+def test_audio_track_cues_are_recorded_not_written(
+    populated_live: FakeLive,
+    session,
+    structure: StructureSpec,
+) -> None:
+    """Audio cues on an audio track are recorded as info and write nothing.
+
+    The bridge has no OSC sample-load API, so cues are noted for the later
+    by-hand materialisation step rather than applied -- and must NOT be treated
+    as the audio-holds-MIDI error.
+    """
+    arrangement = ArrangementSpec(
+        scenes={
+            "Intro": {
+                "A_server_hum": ClipSpec(cues=[CueSpec(sample="hum_01", beat=0.0, length=8.0)]),
+            }
+        }
+    )
+
+    report = apply_project(structure, arrangement, session)
+
+    # Not an error -- cues are legitimate on an audio track.
+    assert not _errors(report)
+    assert any(
+        f.severity is Severity.INFO and f.track == "A_server_hum" and "audio cue" in f.message
+        for f in report.findings
+    )
+    # Nothing was written to the audio track.
+    assert populated_live.tracks[A_SERVER_HUM].clip_slots == {}
 
 
 def test_audio_refusal_surfaced_from_bridge_is_reported(session) -> None:

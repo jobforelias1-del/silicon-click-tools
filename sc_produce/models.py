@@ -190,18 +190,50 @@ class NoteSpec(BaseModel):
     mute: bool = False
 
 
+class CueSpec(BaseModel):
+    """A single audio-clip trigger in an audio-track cell.
+
+    Audio tracks cannot hold MIDI notes, but they can hold *clips* that reference
+    a recorded sample. A cue is the audio counterpart of a :class:`NoteSpec`: it
+    says "place this sample here, this long". The bridge has no sample-load API
+    over OSC, so cues are authored and audited now and *materialised later* (by
+    hand, or by a future loader); :mod:`sc_produce.apply` records but does not
+    write them.
+
+    Attributes:
+        sample: Name or hint of the clip/sample to place (e.g. ``"fx_riser_01"``).
+        beat: Start position in beats from the clip origin (mirrors a note start).
+        length: Clip length in beats.
+        gain_db: Optional level trim in dB.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    sample: str
+    beat: float
+    length: float
+    gain_db: float | None = None
+
+
 class ClipSpec(BaseModel):
     """The contents of one ``scene -> track`` cell.
 
+    A cell is either a **MIDI** cell (``notes``) or an **audio** cell (``cues``),
+    never both -- the auditor rejects a cell that mixes them, and cross-checks each
+    kind against the target track's declared type (notes belong on MIDI tracks,
+    cues on audio tracks).
+
     Attributes:
         length: Optional clip length in beats; defaults applied at apply time.
-        notes: The notes the clip should contain (the desired final state).
+        notes: The MIDI notes the clip should contain (the desired final state).
+        cues: The audio-clip triggers for an audio-track cell.
     """
 
     model_config = ConfigDict(extra="forbid")
 
     length: float | None = None
     notes: list[NoteSpec] = Field(default_factory=list)
+    cues: list[CueSpec] = Field(default_factory=list)
 
 
 class ArrangementSpec(BaseModel):

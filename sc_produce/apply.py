@@ -125,7 +125,19 @@ def _apply_cell(
         report.error(f"unknown track {track}", scene=scene, track=track)
         return
     if ts.type is TrackType.AUDIO:
-        report.error(f"audio track {track} cannot hold MIDI", scene=scene, track=track)
+        # An audio cell carries cues, not MIDI. The bridge has no sample-load API
+        # over OSC, so cues are recorded for the by-hand/later materialisation step
+        # rather than written. MIDI authored onto an audio track is still an error.
+        if clip.notes:
+            report.error(f"audio track {track} cannot hold MIDI", scene=scene, track=track)
+        else:
+            report.info(
+                f"{len(clip.cues)} audio cue(s) for {track}/{scene} "
+                f"(clip {scene_idx}) -- not written (no OSC sample-load); "
+                f"materialise by hand",
+                scene=scene,
+                track=track,
+            )
         return
     if ts.type is TrackType.RETURN:
         report.error("return track cannot hold clips", scene=scene, track=track)

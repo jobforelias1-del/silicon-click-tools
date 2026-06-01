@@ -1,4 +1,4 @@
-# Pression Archivée — audit report
+# Pression Archivée — audit report (Phase 2, post-disambiguation)
 
 Command:
 
@@ -7,55 +7,58 @@ sc-produce audit projects/pression_archivee/arrangement.yml \
     --structure projects/pression_archivee/structure.yml
 ```
 
-**GATE: FAIL** — `error_count = 17` (exit 1).
+**GATE: PASS** — `error_count = 0` (exit 0).
 
 | metric | value |
 |---|---|
-| cells authored | 32 |
-| cells passing value checks (OK) | 32 |
-| value violations (velocity > 127, bad pitch/duration) | 0 |
+| cells authored | 48 |
+| MIDI notes | 681 |
+| audio cues | 105 |
+| value violations | 0 |
 | unknown track / scene errors | 0 |
-| **audio-holds-MIDI errors** | **17** |
-| completeness warnings (empty MIDI grid cells) | 21 |
+| audio-holds-MIDI errors | **0** (was 17 pre-disambiguation) |
+| completeness warnings (empty MIDI grid cells) | 11 (all benign) |
 
-The only failures are the **audio-holds-MIDI** class — MIDI authored onto tracks
-the structure declares as `audio`. This is the exact bug the tool exists to
-catch; it is surfaced here **on purpose, not fixed**, pending a per-track verdict.
+## How the 17 errors were resolved
 
-## audio-holds-MIDI, grouped by track (UNRESOLVED — Elias decides)
+The earlier pass had 17 audio-holds-MIDI errors. Mistral's 2026-05-31
+disambiguation answers resolved every one — **upstream re-authoring, not
+downstream interpretation**, per doctrine:
 
-| track | scenes with MIDI authored | count | likely intent |
-|---|---|---|---|
-| `A_server_hum` | INTRO, VERSE 1, PRE-CHORUS, CHORUS, VERSE 2, BRIDGE, OUTRO | 7 | **MIDI** — sustained tonal pads (A3/A4, dur 8). Retype candidate. |
-| `F_transition` | VERSE 1, PRE-CHORUS, CHORUS, VERSE 2 | 4 | audio cue — 1 note/scene. Cue-marker candidate. |
-| `F_impact` | CHORUS, BRIDGE | 2 | audio cue — 1 note/scene. Cue-marker candidate. |
-| `F_riser` | PRE-CHORUS | 1 | audio cue — sparse. Cue-marker candidate. |
-| `D_clap` | INTRO | 1 | **MIDI** — drum hits. Retype candidate. |
-| `D_perc` | INTRO | 1 | **MIDI** — drum hits. Retype candidate. |
-| `D_drill_roll` | INTRO | 1 | **MIDI** — drum hits. Retype candidate. |
+| rows | Mistral verdict | action taken |
+|---|---|---|
+| R13 `A_server_hum` | **(a) MIDI** | re-typed `audio → midi` in structure.yml; its sustained-pad notes stand |
+| R14 `F_riser`, R15 `F_impact`, R16 `F_transition` | **(b) audio cue** | stay `audio`; MIDI ops re-encoded as `cues` (sample hints from Q25) |
+| `D_clap`, `D_perc`, `D_drill_roll` | **(b) audio cue** | stay `audio`; re-encoded as `cues` |
 
-Total: **17 cells across 7 tracks.**
+The tooling was extended (not bypassed) to support this: `ClipSpec` now carries
+either `notes` (MIDI) **or** `cues` (audio sample triggers), and the audit
+cross-checks each kind against the track's declared type — notes-on-audio and
+cues-on-MIDI are both rejected, with the finding stating the upstream fix.
 
-## OK (passed value checks) — all 32 cells
+## Drum placement (Q8–Q14)
 
-- MIDI tracks (clean, will apply): `D_kick`, `D_snare`, `D_hat` (INTRO);
-  `K_piano` (VERSE 1, PRE-CHORUS, CHORUS, VERSE 2, BRIDGE, OUTRO);
-  `S_808_clean` (INTRO, VERSE 1, PRE-CHORUS, CHORUS, VERSE 2, OUTRO).
-- The 17 audio-track cells above also pass *value* checks (notes are well-formed);
-  they fail only the *type* check.
+Drum passes are no longer all-folded-into-INTRO. Each pass is placed in its
+Mistral-assigned section(s); R10 spans PRE-CHORUS..CHORUS, R11 spans
+INTRO..VERSE 1. Collisions resolve higher-R-index-wins (Q15=yes).
+
+## The 11 warnings (all benign)
+
+Incomplete-grid notices for MIDI cells the section legitimately omits — drums
+absent in VERSE 2 / BRIDGE / OUTRO (no drum pass placed there), and K_piano
+silent in INTRO. These are correct sparse-arrangement gaps, not defects. Do
+**not** run `--strict` (it would fail on these by design).
 
 ## Intentionally empty (not fabricated)
 
-`B_harmonics`, `A_data_air`, `A_archive_room` — Mistral was never asked for these.
+`B_harmonics`, `A_data_air`, `A_archive_room` — Mistral Q26/Q27/Q28 = silent.
 No cells authored, by design.
 
-## Notes / assumptions carried into this report
+## Not yet done (downstream of this audit)
 
-- **Drum scene placement is an assumption.** All seven drum passes (R5–R11) were
-  folded per drum track into a single clip placed in `INTRO` (scenes[0] /
-  "clip slot 0"). If the drum passes correspond to different sections, the
-  arrangement needs a per-pass → scene map before apply. This inflates the INTRO
-  drum clips (D_kick 88, D_hat 95 notes) by overlaying all passes.
-- **One op dropped:** the known-unrecoverable `D_hat` modify stub at beat 32.5
-  (no `from`/`to`) was filtered, matching the bridge transform.
-- **0 value violations** — velocity range across the whole arrangement is 38–127.
+- **Audio cues are recorded, not applied.** The bridge has no OSC sample-load
+  API, so `apply` reports cue cells as info ("materialise by hand") and writes
+  nothing for them. Loading the actual samples is a by-hand / future-loader step.
+- **Sequential follow-action schema** (the structure.yml rewrite to
+  `length`/`follow_action`/`repeat_count`→`LoopIterations`) is the remaining
+  Phase 2 structural work; this pass covered the arrangement + audio-cue model.

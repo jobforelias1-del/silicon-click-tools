@@ -101,6 +101,18 @@ def _audit_cell_values(
             else:
                 seen_keys.add(key)
 
+    for i, cue in enumerate(clip.cues):
+        loc = {"scene": scene, "track": track, "index": i}
+        if not cue.sample:
+            report.error("cue has an empty sample reference", **loc)
+            cell_ok = False
+        if cue.length <= 0:
+            report.error("cue length must be > 0", **loc)
+            cell_ok = False
+        if cue.beat < 0:
+            report.error("cue beat must be >= 0", **loc)
+            cell_ok = False
+
     if clip.length is not None and clip.length <= 0:
         report.warn(
             f"clip length {clip.length} must be > 0",
@@ -109,7 +121,8 @@ def _audit_cell_values(
         )
 
     if cell_ok:
-        report.ok(f"cell ok ({len(clip.notes)} notes)", scene=scene, track=track)
+        kind = f"{len(clip.notes)} notes" if clip.notes else f"{len(clip.cues)} cues"
+        report.ok(f"cell ok ({kind})", scene=scene, track=track)
     return cell_ok
 
 
@@ -117,24 +130,50 @@ def _audit_cell_types(
     report: Report,
     scene: str,
     track: str,
+    clip: ClipSpec,
     structure: StructureSpec,
 ) -> None:
-    """Cross-check a single cell's track and scene against the skeleton.
+    """Cross-check a single cell's content kind against the track's declared type.
+
+    A cell carries MIDI ``notes`` or audio ``cues``. Notes belong on a MIDI track,
+    cues on an audio track; the mismatched cases are rejected. Per the
+    reject-don't-interpret doctrine, each rejection finding states the upstream fix
+    so the audit output is itself the bug report to the writer.
 
     Args:
         report: The report to append findings to.
         scene: The scene name of the cell.
         track: The track name of the cell.
+        clip: The cell's contents (used to tell a MIDI cell from an audio cell).
         structure: The skeleton to validate the cell against.
     """
+    has_notes = bool(clip.notes)
+    has_cues = bool(clip.cues)
+
+    if has_notes and has_cues:
+        report.error(
+            "cell mixes MIDI notes and audio cues; split into one kind "
+            "(notes -> a MIDI track, cues -> an audio track)",
+            scene=scene,
+            track=track,
+        )
+
     if structure.track(track) is None:
         if track in structure.return_order():
             report.error("return track cannot hold clips", scene=scene, track=track)
         else:
             report.error(f"unknown track {track}", scene=scene, track=track)
-    elif structure.is_audio(track):
+    elif structure.is_audio(track) and has_notes:
         report.error(
-            f"audio track {track} cannot hold MIDI (built as audio but MIDI was authored)",
+            f"audio track {track} cannot hold MIDI: re-type {track} to 'midi' in "
+            f"the structure spec, or re-author this cell as audio cues",
+            scene=scene,
+            track=track,
+        )
+    elif structure.is_midi(track) and has_cues:
+        report.error(
+            f"MIDI track {track} cannot hold audio cues: re-type {track} to "
+            f"'audio' in the structure spec, or re-author this cell as MIDI notes",
             scene=scene,
             track=track,
         )
@@ -201,7 +240,7 @@ def audit_project(
             middle_c_octave=middle_c_octave,
         )
         if structure is not None:
-            _audit_cell_types(report, scene, track, structure)
+            _audit_cell_types(report, scene, track, clip, structure)
 
     if structure is not None:
         _audit_completeness(report, arrangement, structure)

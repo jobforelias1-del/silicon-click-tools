@@ -14,33 +14,51 @@ declares a `length` and a `follow_action`; absolute beat positions are
 song via scene follow-actions, and it lets a section repeat or branch without
 re-authoring note positions.
 
-## Decision 1 — `repeat_count` is tooling-expanded, NOT authored as Jump-to-self
+## Decision 1 — `repeat_count` maps directly to native `.als` `LoopIterations`
+
+**(Supersedes the original Play-Again-expansion version below, 2026-06-01, on
+Phase 1 evidence.)**
 
 A section that plays N times is authored as:
 
 ```yaml
 - name: CHORUS
   length: "8.0.0"        # bars.beats.sixteenths (canonical unit TBD in Phase 2)
-  repeat_count: 2         # default 1
+  repeat_count: 2         # default 1  -> writes LoopIterations = 2
   follow_action_a: Next
 ```
 
-The **tooling expands** `repeat_count: N` at apply-time into Live's native
-mechanism — `follow_action: Play Again` for (N-1) iterations, then the authored
-`follow_action_a`. The authored schema never contains a self-Jump.
+Phase 1's bridge-session probe settled the empirical question decision #1
+anticipated. Findings (full evidence: PR #1 on `jobforelias1-del/ableton-bridge`,
+`FOLLOW_ACTIONS_FINDINGS.md`):
 
-Rationale: the manual's "repeat a scene" trick (a self-Jump with a loop counter)
-overloads the Jump target, collides with genuine structural jumps, and makes the
-audit's "do jump targets resolve?" check ambiguous (structural jump vs.
-repeat-counter artifact). Keeping `repeat_count` as a first-class authored field
-and `jump_target` reserved for **genuine structural jumps only** keeps both
-unambiguous.
+- Scene follow actions are **NOT** exposed via the Python LOM at scene, clip, or
+  song level (exhaustive `dir()` on AbletonOSC at the pinned commit) — so the
+  bridge cannot set them over OSC at all.
+- They **ARE** persisted in the `.als` XML at scene level. The write vehicle is
+  therefore **offline `.als` XML injection at apply-time**, into
+  `LiveSet/Scenes/Scene[Id=N]/FollowAction`, not an OSC call.
+- Crucially, **`LoopIterations` is a native per-scene repeat count** in that XML.
 
-**Empirical refinement (Phase 1 answers first):** introspect whether the LOM
-exposes a real **scene-level loop/repeat count**. If it does, `repeat_count` maps
-directly to that property and no Play-Again expansion is needed — even cleaner.
-If it does **not**, use the Play-Again expansion above. Do not assume; Phase 1's
-live introspection decides which branch ships.
+So `repeat_count: N` maps **directly** to `LoopIterations = N`. **No Play-Again /
+Next-chain expansion is needed** — this is the "even cleaner, use the native
+field" branch the original decision called for. `jump_target` still stays
+reserved for genuine structural jumps (that half of the original decision holds).
+
+Persistent `.als` follow-action schema the apply layer will write (action enum
+0–9, UI-order anchored on `4=Next`; byte-level enum map pending final
+confirmation): `FollowActionEnabled`, `FollowActionA`/`FollowActionB`,
+`FollowChanceA`/`FollowChanceB` (integers 0–100, **not** 0–1), `FollowTime`,
+`IsLinked`, `LoopIterations`, `JumpIndexA`/`JumpIndexB` (0-based scene index,
+meaningful only when the corresponding action = Jump).
+
+> **Superseded original (kept for the reasoning trail):** the first version of
+> this decision expanded `repeat_count: N` into `follow_action: Play Again` for
+> (N-1) iterations + the authored action, on the premise that no native
+> scene-level loop count existed. That premise was correct for the LOM but wrong
+> for the `.als` layer; `LoopIterations` makes the expansion unnecessary. The
+> rationale for keeping `jump_target` distinct from repeats (avoiding Jump-target
+> overload and audit ambiguity) carries forward unchanged.
 
 ## Decision 2 — computed beat positions are a DERIVED, AUDITED value
 

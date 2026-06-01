@@ -85,8 +85,8 @@ tracks:
 
   # ── ATMOSPHERE group (color 52) — sidechain Audio From: D_kick set in UI (B2)
   - name: A_server_hum
-    type: audio
-    color: 52
+    type: midi          # Mistral disambiguation Q1=a: these are real sustained
+    color: 52           #   MIDI pads, not a recorded bed -> re-typed audio->midi
     instrument: "Auto Filter + Compressor + Reverb"
   - name: A_data_air
     type: audio
@@ -98,10 +98,9 @@ tracks:
     instrument: "Auto Filter + Compressor + Reverb"
 
   # ── FX group (color 11) ───────────────────────────────────────────────────
-  # NOTE: declared `audio` per the source spec, but cleaned_specs.json reportedly
-  # carries note-ops for these (R14/R15/R16). MIDI on an audio track is the exact
-  # headline bug this tool catches — `audit` will flag it. Resolve the type here
-  # OR drop the cells before apply. See the PR description.
+  # RESOLVED (Mistral Q2/Q3/Q4 = b): these stay `audio`. The MIDI ops Mistral
+  # originally authored were really sample triggers; the arrangement re-encodes
+  # them as audio CUES (sample hints from Q25). They keep type: audio.
   - name: F_riser
     type: audio
     color: 11

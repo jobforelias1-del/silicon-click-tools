@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from sc_produce.models import (
     ArrangementSpec,
     ClipSpec,
+    CueSpec,
     NoteSpec,
     SendSpec,
     StructureSpec,
@@ -107,3 +108,21 @@ def test_clip_defaults():
     clip = ClipSpec()
     assert clip.length is None
     assert clip.notes == []
+    assert clip.cues == []
+
+
+def test_cue_spec_loads_and_forbids_extra():
+    cue = CueSpec(sample="fx_riser_01", beat=20.0, length=4.0, gain_db=-6.0)
+    assert cue.sample == "fx_riser_01"
+    assert cue.gain_db == -6.0
+    # gain_db is optional
+    assert CueSpec(sample="s", beat=0.0, length=1.0).gain_db is None
+    with pytest.raises(ValidationError):
+        CueSpec(sample="s", beat=0.0, length=1.0, gane_db=0)  # typo'd key
+
+
+def test_clip_can_hold_cues():
+    clip = ClipSpec(cues=[CueSpec(sample="clap_01", beat=2.0, length=0.5)])
+    assert clip.notes == []
+    assert len(clip.cues) == 1
+    assert clip.cues[0].sample == "clap_01"
