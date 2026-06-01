@@ -1,0 +1,314 @@
+# Pression Archivée — ARRANGEMENT spec (the Mistral-authored MIDI, audited clean)
+#
+# The companion to examples/pression_archivee.yml. Every key under a scene is a
+# MIDI track in that structure — there is NOT a single clip on an audio
+# (A_server_hum, A_vinyl_crackle, A_field_paris) or return track, and every
+# velocity sits inside the legal MIDI range 1–127. That is what makes this the
+# AUDITED, valid example:
+#
+#   sc-produce audit examples/pression_archivee.arrangement.yml \
+#       --structure examples/pression_archivee.yml      # -> passes clean
+#
+# French drill at 142 BPM in A minor, 4/4. Pitches use scientific names with the
+# Ableton convention C3 = middle C (MIDI 60). Drums use a consistent low GM-ish
+# mapping: kick C1, clap D#1, rim E1, closed hat F#1, open hat A#1. start and
+# duration are in beats; two-bar (8-beat) cells unless noted.
+
+title: Pression Archivée
+
+scenes:
+  # =====================================================================
+  # INTRO — sparse and atmospheric: a felt-piano Am figure, a few bell
+  # answers and the first sliding 808 root. No drums yet; the room is set
+  # by the (audio) textures, which this arrangement deliberately leaves
+  # untouched.
+  # =====================================================================
+  Intro:
+    K_piano:
+      length: 8.0
+      notes:
+        # Am triad, arpeggiated then a soft block, low-velocity felt touch.
+        - {pitch: "A2", start: 0.0, duration: 1.0, velocity: 64}
+        - {pitch: "C3", start: 1.0, duration: 1.0, velocity: 58}
+        - {pitch: "E3", start: 2.0, duration: 2.0, velocity: 62}
+        - {pitch: "A2", start: 4.0, duration: 0.5, velocity: 70}
+        - {pitch: "C3", start: 4.0, duration: 0.5, velocity: 66}
+        - {pitch: "E3", start: 4.0, duration: 1.5, velocity: 68}
+        # leaning to F major (F-A-C) to colour the second bar.
+        - {pitch: "F2", start: 6.0, duration: 2.0, velocity: 60}
+        - {pitch: "A2", start: 6.0, duration: 2.0, velocity: 56}
+        - {pitch: "C3", start: 6.0, duration: 2.0, velocity: 58}
+    K_bells:
+      length: 8.0
+      notes:
+        # Sparse high answers, glassy and quiet, picking out E and A.
+        - {pitch: "E4", start: 3.0, duration: 0.5, velocity: 54}
+        - {pitch: "A4", start: 3.5, duration: 0.5, velocity: 48}
+        - {pitch: "C4", start: 7.0, duration: 1.0, velocity: 50}
+    D_808:
+      length: 8.0
+      notes:
+        # First sub statement: the A minor root, long, sitting under the piano.
+        - {pitch: "A0", start: 0.0, duration: 4.0, velocity: 92}
+        - {pitch: "A0", start: 4.0, duration: 3.5, velocity: 88}
+    P_pad:
+      length: 8.0
+      notes:
+        # A dark Am pad bed, sustained across both bars (noir wash).
+        - {pitch: "A2", start: 0.0, duration: 8.0, velocity: 40}
+        - {pitch: "C3", start: 0.0, duration: 8.0, velocity: 36}
+        - {pitch: "E3", start: 0.0, duration: 8.0, velocity: 38}
+
+  # =====================================================================
+  # VERSE — the groove arrives: syncopated drill kicks, backbeat
+  # clap+rim on beats 2 & 4, rolling triplet hats with 1/16 bursts, the
+  # 808 walking Am–F–G, and dark piano stabs. Two bars.
+  # =====================================================================
+  Verse:
+    D_kick:
+      length: 8.0
+      notes:
+        # Sparse, syncopated: downbeat, a pickup before 2, an off-beat push.
+        - {pitch: "C1", start: 0.0, duration: 0.25, velocity: 120}
+        - {pitch: "C1", start: 0.75, duration: 0.25, velocity: 104}
+        - {pitch: "C1", start: 2.5, duration: 0.25, velocity: 112}
+        - {pitch: "C1", start: 4.0, duration: 0.25, velocity: 120}
+        - {pitch: "C1", start: 4.75, duration: 0.25, velocity: 100}
+        - {pitch: "C1", start: 6.5, duration: 0.25, velocity: 110}
+        - {pitch: "C1", start: 7.25, duration: 0.25, velocity: 96}
+    D_clap:
+      length: 8.0
+      notes:
+        # Backbeat: beats 2 and 4 of each bar (start 1.0 / 3.0, 5.0 / 7.0).
+        - {pitch: "D#1", start: 1.0, duration: 0.5, velocity: 118}
+        - {pitch: "D#1", start: 3.0, duration: 0.5, velocity: 122}
+        - {pitch: "D#1", start: 5.0, duration: 0.5, velocity: 118}
+        - {pitch: "D#1", start: 7.0, duration: 0.5, velocity: 124}
+    D_rim:
+      length: 8.0
+      notes:
+        # Rim doubles the backbeat with a ghosted push just after beat 4.
+        - {pitch: "E1", start: 1.0, duration: 0.25, velocity: 84}
+        - {pitch: "E1", start: 3.0, duration: 0.25, velocity: 88}
+        - {pitch: "E1", start: 3.5, duration: 0.25, velocity: 60}
+        - {pitch: "E1", start: 5.0, duration: 0.25, velocity: 84}
+        - {pitch: "E1", start: 7.0, duration: 0.25, velocity: 90}
+        - {pitch: "E1", start: 7.5, duration: 0.25, velocity: 58}
+    D_hat:
+      length: 8.0
+      notes:
+        # Rolling straight 1/8 hats with two fast 1/16 rolls (beats ~2.5 and ~6.5),
+        # velocity swung accent-on-the-beat, ghosts off-beat. Bar 1.
+        - {pitch: "F#1", start: 0.0, duration: 0.25, velocity: 96}
+        - {pitch: "F#1", start: 0.5, duration: 0.25, velocity: 70}
+        - {pitch: "F#1", start: 1.0, duration: 0.25, velocity: 92}
+        - {pitch: "F#1", start: 1.5, duration: 0.25, velocity: 68}
+        - {pitch: "F#1", start: 2.0, duration: 0.25, velocity: 90}
+        # 1/16 roll into beat 3
+        - {pitch: "F#1", start: 2.5, duration: 0.25, velocity: 72}
+        - {pitch: "F#1", start: 2.75, duration: 0.25, velocity: 100}
+        - {pitch: "F#1", start: 3.0, duration: 0.25, velocity: 88}
+        - {pitch: "F#1", start: 3.5, duration: 0.25, velocity: 66}
+        # Bar 2
+        - {pitch: "F#1", start: 4.0, duration: 0.25, velocity: 96}
+        - {pitch: "F#1", start: 4.5, duration: 0.25, velocity: 70}
+        - {pitch: "F#1", start: 5.0, duration: 0.25, velocity: 92}
+        - {pitch: "F#1", start: 5.5, duration: 0.25, velocity: 68}
+        - {pitch: "F#1", start: 6.0, duration: 0.25, velocity: 90}
+        # 1/16 triplet-ish burst into beat 7
+        - {pitch: "F#1", start: 6.5, duration: 0.125, velocity: 64}
+        - {pitch: "F#1", start: 6.625, duration: 0.125, velocity: 78}
+        - {pitch: "F#1", start: 6.75, duration: 0.125, velocity: 90}
+        - {pitch: "F#1", start: 6.875, duration: 0.125, velocity: 102}
+        - {pitch: "F#1", start: 7.0, duration: 0.25, velocity: 88}
+        - {pitch: "F#1", start: 7.5, duration: 0.25, velocity: 66}
+    D_openhat:
+      length: 8.0
+      notes:
+        # Open hat lifts the off-beat of 2 and the "and" of 4 — classic drill air.
+        - {pitch: "A#1", start: 1.5, duration: 0.5, velocity: 86}
+        - {pitch: "A#1", start: 5.5, duration: 0.5, velocity: 84}
+        - {pitch: "A#1", start: 7.75, duration: 0.25, velocity: 72}
+    D_808:
+      length: 8.0
+      notes:
+        # Sliding sub line: A (root) -> F -> G, longer notes, glide low-octave.
+        # The repeated key with a portamento patch reads as a slide between roots.
+        - {pitch: "A0", start: 0.0, duration: 2.5, velocity: 110}
+        - {pitch: "A0", start: 2.5, duration: 1.5, velocity: 96}
+        - {pitch: "F0", start: 4.0, duration: 2.0, velocity: 108}
+        - {pitch: "G0", start: 6.0, duration: 1.5, velocity: 104}
+        - {pitch: "A0", start: 7.5, duration: 0.5, velocity: 90}
+    K_piano:
+      length: 8.0
+      notes:
+        # Dark Am stabs voiced mid-register, answered by an F-A-C stab. Short, hard.
+        - {pitch: "A2", start: 0.0, duration: 0.5, velocity: 96}
+        - {pitch: "C3", start: 0.0, duration: 0.5, velocity: 90}
+        - {pitch: "E3", start: 0.0, duration: 0.5, velocity: 92}
+        - {pitch: "A2", start: 2.5, duration: 0.25, velocity: 78}
+        - {pitch: "C3", start: 2.5, duration: 0.25, velocity: 74}
+        - {pitch: "E3", start: 2.5, duration: 0.25, velocity: 76}
+        - {pitch: "F2", start: 4.0, duration: 0.5, velocity: 94}
+        - {pitch: "A2", start: 4.0, duration: 0.5, velocity: 88}
+        - {pitch: "C3", start: 4.0, duration: 0.5, velocity: 90}
+        - {pitch: "G2", start: 6.0, duration: 1.0, velocity: 84}
+        - {pitch: "B2", start: 6.0, duration: 1.0, velocity: 80}
+        - {pitch: "D3", start: 6.0, duration: 1.0, velocity: 82}
+    L_lead:
+      length: 8.0
+      notes:
+        # Sparse minor motif: A -> C -> B -> A, plucked, leaving space.
+        - {pitch: "A3", start: 1.0, duration: 0.5, velocity: 88}
+        - {pitch: "C4", start: 1.5, duration: 0.5, velocity: 82}
+        - {pitch: "B3", start: 2.0, duration: 1.0, velocity: 78}
+        - {pitch: "A3", start: 5.0, duration: 0.5, velocity: 86}
+        - {pitch: "E4", start: 5.5, duration: 0.5, velocity: 80}
+        - {pitch: "C4", start: 6.0, duration: 1.5, velocity: 76}
+
+  # =====================================================================
+  # DROP — the hardest section: kick pattern intensifies, the 808 drives
+  # the Am–F–C–G turnaround, hats keep their triplet/roll energy, claps &
+  # rims hammer the backbeat, and the lead carries the hook. Two bars.
+  # =====================================================================
+  Drop:
+    D_kick:
+      length: 8.0
+      notes:
+        # Harder, more syncopation; doubled kick pickups into the backbeat.
+        - {pitch: "C1", start: 0.0, duration: 0.25, velocity: 125}
+        - {pitch: "C1", start: 0.5, duration: 0.25, velocity: 100}
+        - {pitch: "C1", start: 1.75, duration: 0.25, velocity: 110}
+        - {pitch: "C1", start: 2.5, duration: 0.25, velocity: 116}
+        - {pitch: "C1", start: 3.75, duration: 0.25, velocity: 104}
+        - {pitch: "C1", start: 4.0, duration: 0.25, velocity: 125}
+        - {pitch: "C1", start: 4.5, duration: 0.25, velocity: 98}
+        - {pitch: "C1", start: 5.75, duration: 0.25, velocity: 112}
+        - {pitch: "C1", start: 6.5, duration: 0.25, velocity: 118}
+        - {pitch: "C1", start: 7.75, duration: 0.25, velocity: 102}
+    D_clap:
+      length: 8.0
+      notes:
+        - {pitch: "D#1", start: 1.0, duration: 0.5, velocity: 124}
+        - {pitch: "D#1", start: 3.0, duration: 0.5, velocity: 127}
+        - {pitch: "D#1", start: 5.0, duration: 0.5, velocity: 124}
+        - {pitch: "D#1", start: 7.0, duration: 0.5, velocity: 127}
+    D_rim:
+      length: 8.0
+      notes:
+        - {pitch: "E1", start: 1.0, duration: 0.25, velocity: 92}
+        - {pitch: "E1", start: 2.75, duration: 0.25, velocity: 70}
+        - {pitch: "E1", start: 3.0, duration: 0.25, velocity: 96}
+        - {pitch: "E1", start: 5.0, duration: 0.25, velocity: 92}
+        - {pitch: "E1", start: 6.75, duration: 0.25, velocity: 70}
+        - {pitch: "E1", start: 7.0, duration: 0.25, velocity: 98}
+    D_hat:
+      length: 8.0
+      notes:
+        # Triplet 1/8 feel (0.333 grid) across bar 1 with a 1/16 roll, then
+        # straight-with-burst bar 2. Velocities accented on each beat.
+        - {pitch: "F#1", start: 0.0, duration: 0.333, velocity: 104}
+        - {pitch: "F#1", start: 0.333, duration: 0.333, velocity: 72}
+        - {pitch: "F#1", start: 0.667, duration: 0.333, velocity: 80}
+        - {pitch: "F#1", start: 1.0, duration: 0.333, velocity: 100}
+        - {pitch: "F#1", start: 1.333, duration: 0.333, velocity: 70}
+        - {pitch: "F#1", start: 1.667, duration: 0.333, velocity: 82}
+        - {pitch: "F#1", start: 2.0, duration: 0.333, velocity: 102}
+        - {pitch: "F#1", start: 2.333, duration: 0.333, velocity: 72}
+        - {pitch: "F#1", start: 2.667, duration: 0.333, velocity: 80}
+        # 1/16 roll over beat 4
+        - {pitch: "F#1", start: 3.0, duration: 0.25, velocity: 96}
+        - {pitch: "F#1", start: 3.25, duration: 0.25, velocity: 78}
+        - {pitch: "F#1", start: 3.5, duration: 0.25, velocity: 88}
+        - {pitch: "F#1", start: 3.75, duration: 0.25, velocity: 100}
+        # Bar 2 straight 1/8 with a fast burst into beat 8
+        - {pitch: "F#1", start: 4.0, duration: 0.25, velocity: 104}
+        - {pitch: "F#1", start: 4.5, duration: 0.25, velocity: 72}
+        - {pitch: "F#1", start: 5.0, duration: 0.25, velocity: 98}
+        - {pitch: "F#1", start: 5.5, duration: 0.25, velocity: 70}
+        - {pitch: "F#1", start: 6.0, duration: 0.25, velocity: 100}
+        - {pitch: "F#1", start: 6.5, duration: 0.25, velocity: 74}
+        - {pitch: "F#1", start: 7.0, duration: 0.125, velocity: 80}
+        - {pitch: "F#1", start: 7.125, duration: 0.125, velocity: 90}
+        - {pitch: "F#1", start: 7.25, duration: 0.125, velocity: 102}
+        - {pitch: "F#1", start: 7.375, duration: 0.125, velocity: 112}
+        - {pitch: "F#1", start: 7.5, duration: 0.25, velocity: 86}
+    D_openhat:
+      length: 8.0
+      notes:
+        - {pitch: "A#1", start: 1.5, duration: 0.5, velocity: 92}
+        - {pitch: "A#1", start: 3.5, duration: 0.5, velocity: 88}
+        - {pitch: "A#1", start: 5.5, duration: 0.5, velocity: 92}
+        - {pitch: "A#1", start: 7.5, duration: 0.5, velocity: 90}
+    D_808:
+      length: 8.0
+      notes:
+        # The hook turnaround: A -> F -> C -> G, hard, sliding, low octave.
+        - {pitch: "A0", start: 0.0, duration: 2.0, velocity: 122}
+        - {pitch: "F0", start: 2.0, duration: 2.0, velocity: 116}
+        - {pitch: "C1", start: 4.0, duration: 2.0, velocity: 118}
+        - {pitch: "G0", start: 6.0, duration: 1.5, velocity: 114}
+        - {pitch: "A0", start: 7.5, duration: 0.5, velocity: 100}
+    K_piano:
+      length: 8.0
+      notes:
+        # Driving block-chord stabs following the 808: Am, F, C, G.
+        - {pitch: "A2", start: 0.0, duration: 0.75, velocity: 104}
+        - {pitch: "C3", start: 0.0, duration: 0.75, velocity: 98}
+        - {pitch: "E3", start: 0.0, duration: 0.75, velocity: 100}
+        - {pitch: "F2", start: 2.0, duration: 0.75, velocity: 102}
+        - {pitch: "A2", start: 2.0, duration: 0.75, velocity: 96}
+        - {pitch: "C3", start: 2.0, duration: 0.75, velocity: 98}
+        - {pitch: "C3", start: 4.0, duration: 0.75, velocity: 104}
+        - {pitch: "E3", start: 4.0, duration: 0.75, velocity: 98}
+        - {pitch: "G3", start: 4.0, duration: 0.75, velocity: 100}
+        - {pitch: "G2", start: 6.0, duration: 0.75, velocity: 100}
+        - {pitch: "B2", start: 6.0, duration: 0.75, velocity: 94}
+        - {pitch: "D3", start: 6.0, duration: 0.75, velocity: 96}
+    K_bells:
+      length: 8.0
+      notes:
+        # Bell counter-melody doubling the hook an octave up, sparse.
+        - {pitch: "E4", start: 0.0, duration: 0.5, velocity: 84}
+        - {pitch: "A4", start: 1.0, duration: 0.5, velocity: 80}
+        - {pitch: "C5", start: 4.0, duration: 0.5, velocity: 82}
+        - {pitch: "G4", start: 6.0, duration: 1.0, velocity: 78}
+    L_lead:
+      length: 8.0
+      notes:
+        # The hook: a minor phrase A-C-E-D-C-B-A across the two bars.
+        - {pitch: "A3", start: 0.0, duration: 0.5, velocity: 100}
+        - {pitch: "C4", start: 0.5, duration: 0.5, velocity: 92}
+        - {pitch: "E4", start: 1.0, duration: 1.0, velocity: 96}
+        - {pitch: "D4", start: 2.5, duration: 0.5, velocity: 88}
+        - {pitch: "C4", start: 3.0, duration: 1.0, velocity: 90}
+        - {pitch: "A3", start: 4.0, duration: 0.5, velocity: 98}
+        - {pitch: "E4", start: 4.5, duration: 0.5, velocity: 90}
+        - {pitch: "G4", start: 5.0, duration: 1.0, velocity: 94}
+        - {pitch: "B3", start: 6.5, duration: 0.5, velocity: 86}
+        - {pitch: "A3", start: 7.0, duration: 1.0, velocity: 92}
+
+  # =====================================================================
+  # BREAK — strip back to atmosphere: 808 holds the root, pad swells, a
+  # lone bell line. Drums drop out to reset before the next section.
+  # =====================================================================
+  Break:
+    D_808:
+      length: 8.0
+      notes:
+        - {pitch: "A0", start: 0.0, duration: 6.0, velocity: 86}
+        - {pitch: "E0", start: 6.0, duration: 2.0, velocity: 80}
+    P_pad:
+      length: 8.0
+      notes:
+        - {pitch: "A2", start: 0.0, duration: 8.0, velocity: 44}
+        - {pitch: "C3", start: 0.0, duration: 8.0, velocity: 40}
+        - {pitch: "E3", start: 0.0, duration: 8.0, velocity: 42}
+        - {pitch: "G3", start: 4.0, duration: 4.0, velocity: 36}
+    K_bells:
+      length: 8.0
+      notes:
+        - {pitch: "A4", start: 0.0, duration: 1.0, velocity: 60}
+        - {pitch: "C5", start: 2.0, duration: 1.0, velocity: 54}
+        - {pitch: "E4", start: 4.0, duration: 2.0, velocity: 56}
+        - {pitch: "A4", start: 7.0, duration: 1.0, velocity: 50}

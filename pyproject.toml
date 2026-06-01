@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "silicon-click-tools"
+version = "0.1.0"
+description = "The Silicon Click music-production pipeline as a CLI: scaffold, compose, audit, and apply Ableton Live arrangements."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Silicon Click" }]
+keywords = ["ableton", "live", "osc", "music", "production", "mistral", "pipeline"]
+dependencies = [
+    "ableton-bridge @ git+https://github.com/jobforelias1-del/ableton-bridge-v2.git",
+    "pydantic>=2",
+    "PyYAML>=6",
+    "requests>=2.28",
+    "Jinja2>=3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "pytest-cov>=4", "ruff>=0.4", "black>=24"]
+
+[project.scripts]
+sc-produce = "sc_produce.cli:main"
+
+[project.urls]
+"AbletonOSC" = "https://github.com/ideoforms/AbletonOSC"
+"ableton-bridge" = "https://github.com/jobforelias1-del/ableton-bridge-v2"
+
+[tool.setuptools.packages.find]
+include = ["sc_produce*"]
+
+[tool.setuptools.package-data]
+sc_produce = ["templates/*.md"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["sc_produce"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 85
+exclude_lines = ["pragma: no cover", "def __repr__", "raise NotImplementedError", "if __name__ == .__main__.:"]

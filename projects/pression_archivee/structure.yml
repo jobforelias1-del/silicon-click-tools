@@ -1,0 +1,154 @@
+# Pression Archivée — STRUCTURE spec (REAL build, source of truth)
+#
+# Re-encoded by the sc-produce pipeline from the spec Dispatch extracted out of
+#   ~/Projects/ableton-bridge/build_pression_archivee_scaffold.py
+# (a local repo, not on GitHub). This file is the source-controlled, schema-valid
+# form of that scaffold script, per the doctrine: every track is a pair of specs.
+#
+# UNVERIFIED AGAINST SOURCE: this was authored from a paste-relay of the script's
+# contents, not the script itself or the built set. It should be diffed against
+# build_pression_archivee_scaffold.py before being treated as canonical. Note the
+# screenshot of the built set used different prefixes for some tracks (L_riser /
+# Y_transition / P_piano / S_harmonics / A_archive_no) than the names below.
+#
+# Schema notes (see sc_produce/models.py):
+#   * `instrument:` is a free-form documentation hint. v0.1 does NOT load devices
+#     over OSC (the bridge has no load API), so these record the intended INITIAL
+#     device chains for the by-hand load step — not final patches.
+#   * `color:` is the Ableton palette index (0–69).
+#   * Fields the schema does not model — track GROUPS (Cmd+G), output ROUTING to
+#     M_mix_bus, sidechain SOURCES, and the pitch-placement doctrine — are recorded
+#     as comments. They are UI ("B2") steps, not scaffold operations.
+
+title: Pression Archivée
+bpm: 142
+key: Am
+idiom: french_drill
+time_signature: [4, 4]
+
+# Sequential scene model (Mistral Q16-Q23). Each scene declares its length in
+# beats and what follows; absolute beat positions are COMPUTED, not authored.
+# repeat_count maps directly to the native .als LoopIterations (Phase 1 finding).
+# Every section plays once and follows to Next; OUTRO Stops. (Lengths @142 BPM:
+# INTRO 38, VERSE 1 76, PRE-CHORUS 28, CHORUS 38, VERSE 2 76, BRIDGE 48, OUTRO 38.)
+enable_follow_actions: true
+scenes:
+  - name: INTRO
+    length: 38
+    follow_action_a: Next
+  - name: "VERSE 1"
+    length: 76
+    follow_action_a: Next
+  - name: PRE-CHORUS
+    length: 28
+    follow_action_a: Next
+  - name: CHORUS
+    length: 38
+    follow_action_a: Next
+  - name: "VERSE 2"
+    length: 76
+    follow_action_a: Next
+  - name: BRIDGE
+    length: 48
+    follow_action_a: Next
+  - name: OUTRO
+    length: 38
+    follow_action_a: Stop
+
+tracks:
+  # ── DRUMS group (color 6) ────────────────────────────────────────────────
+  - name: D_kick
+    type: midi
+    color: 6
+    instrument: "Operator + Compressor + EQ Eight (placeholder until drum rack)"
+  - name: D_snare
+    type: midi
+    color: 6
+    instrument: "Operator + Compressor + EQ Eight (placeholder until drum rack)"
+  - name: D_clap
+    type: audio          # audio: Elias drops samples
+    color: 6
+    instrument: "Compressor + EQ Eight"
+  - name: D_hat
+    type: midi
+    color: 6
+    instrument: "Operator + Compressor + EQ Eight (placeholder until drum rack)"
+  - name: D_perc
+    type: audio          # audio: sample
+    color: 6
+    instrument: "Compressor + EQ Eight"
+  - name: D_drill_roll
+    type: audio          # audio: sample
+    color: 6
+    instrument: "Compressor + EQ Eight"
+
+  # ── 808 / SUB group (color 58) — MIDI for direct A1 write, ~55 Hz pressure floor
+  - name: S_808_clean
+    type: midi
+    color: 58
+    instrument: "Operator + EQ Eight + Utility"
+
+  # ── BASS HARMONICS group (color 9) — tied to A1 but HPF ~60 Hz to clear the sub
+  - name: B_harmonics
+    type: audio
+    color: 9
+    instrument: "Saturator + EQ Eight (HPF ~60 Hz) + Utility"
+
+  # ── KEYS group (color 18) — A2 ~110 Hz, sits above the sub
+  - name: K_piano
+    type: midi
+    color: 18
+    instrument: "Operator (placeholder; Elias picks the real piano patch)"
+
+  # ── ATMOSPHERE group (color 52) — sidechain Audio From: D_kick set in UI (B2)
+  - name: A_server_hum
+    type: midi          # Mistral disambiguation Q1=a: these are real sustained
+    color: 52           #   MIDI pads, not a recorded bed -> re-typed audio->midi
+    instrument: "Auto Filter + Compressor + Reverb"
+  - name: A_data_air
+    type: audio
+    color: 52
+    instrument: "Auto Filter + Compressor + Reverb"
+  - name: A_archive_room
+    type: audio
+    color: 52
+    instrument: "Auto Filter + Compressor + Reverb"
+
+  # ── FX group (color 11) ───────────────────────────────────────────────────
+  # RESOLVED (Mistral Q2/Q3/Q4 = b): these stay `audio`. The MIDI ops Mistral
+  # originally authored were really sample triggers; the arrangement re-encodes
+  # them as audio CUES (sample hints from Q25). They keep type: audio.
+  - name: F_riser
+    type: audio
+    color: 11
+  - name: F_impact
+    type: audio
+    color: 11
+  - name: F_transition
+    type: audio
+    color: 11
+
+  # ── VOCAL placeholder (color 14) — intentionally empty, no devices ─────────
+  - name: V_placeholder
+    type: audio
+    color: 14
+
+  # ── MIX BUS (color 53) — all track outputs sum here (routing is a UI/B2 step)
+  - name: M_mix_bus
+    type: audio
+    color: 53
+    instrument: "Glue Compressor + EQ Eight + Limiter"
+
+returns:
+  # Anonymous on create (AbletonOSC limitation); names applied by scaffold/UI.
+  - name: R_REVERB
+    type: return
+  - name: R_DELAY
+    type: return
+  - name: R_SIDECHAIN_TRIGGER
+    type: return
+
+# Sends start at level 0 (nothing to scaffold). The atmosphere sidechain source
+# (Compressor Audio From → D_kick) is a UI step, not an OSC send. Left empty by
+# design; populate when send levels are dialled in.
+sends: []
