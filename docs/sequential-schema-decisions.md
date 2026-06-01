@@ -94,23 +94,32 @@ The audit also validates:
 - every `jump_target` (and `follow_action: Jump`/`Other` target) names an
   **existing** section; dangling targets are errors.
 
-## Schema sketch (subject to Phase 0 answers + Phase 1 property names)
+## Schema as shipped (2026-06-01)
+
+The canonical length unit is **beats** (a plain float), not bars.beats.sixteenths
+— it keeps `scene_start_beat` computation and the note-overflow check arithmetic,
+and matches how notes are already authored. `SceneSpec` lives in
+`sc_produce/models.py`; `StructureSpec.scenes` is `list[SceneSpec]` with a
+validator that coerces a bare scene-name string into a default `SceneSpec`, so
+every pre-existing positional spec still loads.
 
 ```yaml
-sections:
+enable_follow_actions: true   # global toggle (Mistral Q23)
+scenes:
   - name: INTRO
-    length: "9.2.0"          # canonical unit decided in Phase 2 (bars.beats.16ths leading candidate)
-    repeat_count: 1
+    length: 38              # beats; absolute start is COMPUTED, not authored
+    repeat_count: 1         # -> .als LoopIterations
     follow_action_a: Next
     chance_a: 100
     follow_action_b: No Action
     chance_b: 0
-    # jump_target_a / jump_target_b: only when follow_action is Jump
-enable_follow_actions: true   # global toggle (Mistral Q23)
+    # jump_target_a / jump_target_b: only when the action is Jump
 ```
 
-Field names will be reconciled with the **actual** AbletonOSC/LOM property names
-that Phase 1 confirms, so the spec vocabulary matches the write path 1:1.
+The audit enforces Decisions #2/#4: jump targets must resolve to an existing
+scene, scene lengths must be > 0 (degenerate total flagged), and a note may not
+start at/after its scene's length. Field names map to the `.als` follow-action
+schema Phase 1 confirmed (see Decision #1).
 
 ---
 

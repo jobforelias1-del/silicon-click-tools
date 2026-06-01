@@ -27,7 +27,7 @@ import argparse
 from . import common, spec
 from .errors import SpecError
 from .midi import resolve_pitch
-from .models import ArrangementSpec, ClipSpec, StructureSpec
+from .models import ArrangementSpec, ClipSpec, FollowAction, StructureSpec
 from .report import Report
 
 #: Inclusive MIDI maximum for a velocity value.
@@ -192,7 +192,8 @@ def _audit_completeness(
         arrangement: The authored arrangement.
         structure: The skeleton whose ``scenes`` x MIDI-tracks grid is expected.
     """
-    for scene in structure.scenes:
+    for scene_spec in structure.scenes:
+        scene = scene_spec.name
         for track in structure.midi_track_names():
             if arrangement.cell(scene, track) is None:
                 report.warn(
@@ -244,8 +245,70 @@ def audit_project(
 
     if structure is not None:
         _audit_completeness(report, arrangement, structure)
+        _audit_sequence(report, arrangement, structure)
 
     return report
+
+
+def _audit_sequence(report: Report, arrangement: ArrangementSpec, structure: StructureSpec) -> None:
+    """Validate the sequential scene model: lengths, jump targets, note overflow.
+
+    Three checks (Decisions #2 and #4):
+
+    * **Jump targets resolve.** A scene whose follow action is ``Jump`` must name
+      an existing scene in ``jump_target_a``/``_b``; a dangling or missing target
+      is an error.
+    * **Lengths are sane.** A scene with a non-positive ``length`` is an error;
+      when every scene declares a length, a degenerate total song length is
+      flagged.
+    * **Notes fit their section.** With computed start beats available, a note
+      starting at or beyond its scene's ``length`` is an error (the bug the
+      positional model caught implicitly).
+    """
+    names = set(structure.scene_names())
+    total = 0.0
+    have_all_lengths = True
+
+    for s in structure.scenes:
+        for action, target, label in (
+            (s.follow_action_a, s.jump_target_a, "A"),
+            (s.follow_action_b, s.jump_target_b, "B"),
+        ):
+            if action is FollowAction.JUMP:
+                if target is None:
+                    report.error(
+                        f"scene {s.name}: follow action {label} is Jump but no "
+                        f"jump_target_{label.lower()} is set",
+                        scene=s.name,
+                    )
+                elif target not in names:
+                    report.error(
+                        f"scene {s.name}: jump target {target!r} is not an " f"existing scene",
+                        scene=s.name,
+                    )
+        if s.length is None:
+            have_all_lengths = False
+        elif s.length <= 0:
+            report.error(f"scene {s.name}: length must be > 0", scene=s.name)
+        else:
+            total += s.length * max(s.repeat_count, 1)
+
+    if have_all_lengths and structure.scenes and total <= 0:
+        report.error(f"total song length is degenerate ({total} beats)")
+
+    # Note overflow: a note must start within its scene's length.
+    for scene, track, clip in arrangement.iter_cells():
+        s = structure.scene(scene)
+        if s is None or s.length is None:
+            continue
+        for i, note in enumerate(clip.notes):
+            if note.start >= s.length:
+                report.error(
+                    f"note start {note.start} is beyond scene {scene} length " f"{s.length}",
+                    scene=scene,
+                    track=track,
+                    index=i,
+                )
 
 
 def configure_parser(parser: argparse.ArgumentParser) -> None:

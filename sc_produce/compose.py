@@ -119,7 +119,7 @@ def build_brief(structure: StructureSpec, *, chunk_track: str | None = None) -> 
         "time_signature": f"{num}/{den}",
         "tracks": _track_context(structure),
         "midi_track_names": structure.midi_track_names(),
-        "scenes": list(structure.scenes),
+        "scenes": structure.scene_names(),
         "chunk_track": chunk_track,
         "middle_c": _MIDDLE_C_NOTE,
     }

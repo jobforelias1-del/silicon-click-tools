@@ -31,7 +31,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class TrackType(str, Enum):
@@ -83,6 +83,62 @@ class SendSpec(BaseModel):
     level: float = 0.0
 
 
+class FollowAction(str, Enum):
+    """A Live scene follow action (the ``FollowActionA``/``B`` enum in the .als).
+
+    Values are the human-readable names; the apply layer maps them to the .als
+    integer enum (UI-order anchored on ``NEXT == 4``). ``JUMP`` requires a
+    ``jump_target``.
+    """
+
+    NO_ACTION = "No Action"
+    STOP = "Stop"
+    PLAY_AGAIN = "Play Again"
+    PREVIOUS = "Previous"
+    NEXT = "Next"
+    FIRST = "First"
+    LAST = "Last"
+    ANY = "Any"
+    OTHER = "Other"
+    JUMP = "Jump"
+
+
+class SceneSpec(BaseModel):
+    """One scene (song section) in the sequential arrangement model.
+
+    The arrangement model is **sequential**: a scene declares how long it plays
+    and what follows, and absolute beat positions are *computed* from the chain
+    rather than authored. A bare scene name in YAML (the old positional form) is
+    coerced into a ``SceneSpec`` with default follow behaviour, so existing
+    structure specs keep loading unchanged.
+
+    Attributes:
+        name: The scene name; its index is still the arrangement clip slot.
+        length: Scene length in beats (the follow-action time). ``None`` until a
+            sequential spec sets it; computed positions need it.
+        repeat_count: How many times the scene plays before following. Maps
+            directly to the native ``.als`` ``LoopIterations`` (>=1).
+        follow_action_a: Primary follow action.
+        chance_a: Probability weight for action A (integer 0--100).
+        follow_action_b: Secondary follow action.
+        chance_b: Probability weight for action B (integer 0--100).
+        jump_target_a: Target scene name when ``follow_action_a`` is ``Jump``.
+        jump_target_b: Target scene name when ``follow_action_b`` is ``Jump``.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    length: float | None = None
+    repeat_count: int = 1
+    follow_action_a: FollowAction = FollowAction.NEXT
+    chance_a: int = 100
+    follow_action_b: FollowAction = FollowAction.NO_ACTION
+    chance_b: int = 0
+    jump_target_a: str | None = None
+    jump_target_b: str | None = None
+
+
 class StructureSpec(BaseModel):
     """The Live skeleton: tempo, tracks, returns, sends and scenes.
 
@@ -95,7 +151,10 @@ class StructureSpec(BaseModel):
         tracks: Regular (MIDI/audio) tracks, in session order.
         returns: Return tracks, in order; their order defines send indices.
         sends: Send routings from tracks to returns.
-        scenes: Scene names, in session order; a scene's index is its clip slot.
+        scenes: Scenes (sections), in session order; a scene's index is its clip
+            slot. Authored as :class:`SceneSpec` objects, but a bare string is
+            coerced into one (the positional form), so old specs still load.
+        enable_follow_actions: Global "Enable Follow Actions" toggle for the song.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -108,7 +167,20 @@ class StructureSpec(BaseModel):
     tracks: list[TrackSpec] = Field(default_factory=list)
     returns: list[TrackSpec] = Field(default_factory=list)
     sends: list[SendSpec] = Field(default_factory=list)
-    scenes: list[str] = Field(default_factory=list)
+    scenes: list[SceneSpec] = Field(default_factory=list)
+    enable_follow_actions: bool = False
+
+    @field_validator("scenes", mode="before")
+    @classmethod
+    def _coerce_scene_names(cls, value: object) -> object:
+        """Coerce bare scene-name strings into :class:`SceneSpec` (positional form).
+
+        Lets ``scenes: [Intro, Verse]`` keep loading alongside the sequential
+        ``scenes: [{name: Intro, length: 38, ...}]`` form.
+        """
+        if isinstance(value, list):
+            return [{"name": item} if isinstance(item, str) else item for item in value]
+        return value
 
     def track(self, name: str) -> TrackSpec | None:
         """Return the regular track with ``name``, or ``None`` if absent."""
@@ -158,12 +230,40 @@ class StructureSpec(BaseModel):
         except ValueError:
             return None
 
+    def scene_names(self) -> list[str]:
+        """Return the scene names, in order."""
+        return [s.name for s in self.scenes]
+
+    def scene(self, name: str) -> SceneSpec | None:
+        """Return the scene with ``name``, or ``None`` if absent."""
+        for s in self.scenes:
+            if s.name == name:
+                return s
+        return None
+
     def scene_index(self, scene_name: str) -> int | None:
         """Resolve a scene name to its clip slot index, or ``None``."""
-        try:
-            return self.scenes.index(scene_name)
-        except ValueError:
-            return None
+        for i, s in enumerate(self.scenes):
+            if s.name == scene_name:
+                return i
+        return None
+
+    def scene_start_beat(self, scene_name: str) -> float | None:
+        """Compute a scene's absolute start beat from the sequential lengths.
+
+        Returns ``None`` if the scene is unknown or any preceding scene lacks a
+        ``length`` (so positions cannot be computed). Each scene contributes
+        ``length * repeat_count`` beats. This is the *derived, audited* value:
+        the audit cross-checks note starts against it (see Decision #2).
+        """
+        beat = 0.0
+        for s in self.scenes:
+            if s.name == scene_name:
+                return beat
+            if s.length is None:
+                return None
+            beat += s.length * max(s.repeat_count, 1)
+        return None
 
 
 class NoteSpec(BaseModel):

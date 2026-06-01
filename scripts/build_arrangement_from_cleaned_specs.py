@@ -157,19 +157,41 @@ def main() -> None:
             place(blk["header"], track, notes_to_cue_clip(fold([blk]), SAMPLE_HINTS[track]))
 
     # --- drums: place each pass into its Q8..Q14 section(s) -------------------
-    # MIDI drums (D_kick/D_snare/D_hat) -> notes; (b) drums -> cues. A pass
-    # spanning sections writes the same folded content into each section.
-    for track in DRUM_TRACKS:
-        # gather (pass_key, blocks) so we know which section(s) each pass targets
-        per_section: dict[str, list[dict]] = {}
-        for key, sections in DRUM_PASS_SECTION.items():
+    # MIDI drums (D_kick/D_snare/D_hat) -> notes; (b) drums -> cues. A pass that
+    # SPANS sections (Q13/Q14) is STRETCHED across the absolute beat-range of the
+    # combined sections and split at section boundaries (Elias 2026-06-01), not
+    # copied into each. Per-section note fragments accumulate, then fold once.
+    section_len = {s.name: (s.length or 0.0) for s in structure.scenes}
+    # track -> section -> {(pitch, beat): note}. A dict keyed by (pitch, beat)
+    # enforces Q15 (higher R-index wins): DRUM_PASS_SECTION is iterated R5..R11,
+    # so a later pass's note overwrites an earlier one at the same (pitch, beat).
+    drum_notes: dict[str, dict[str, dict[tuple, dict]]] = {t: {} for t in DRUM_TRACKS}
+
+    for key, span in DRUM_PASS_SECTION.items():
+        for track in DRUM_TRACKS:
             blocks = [b for b in cs.get(key, []) if b.get("header") == track]
             if not blocks:
                 continue
-            for section in sections:
-                per_section.setdefault(section, []).extend(blocks)
-        for section, blocks in per_section.items():
-            notes = fold(blocks)
+            notes = fold(blocks)  # beats relative to the span start
+            # boundaries of each section within the span (cumulative)
+            starts = []
+            acc = 0.0
+            for sec in span:
+                starts.append((sec, acc, acc + section_len.get(sec, 0.0)))
+                acc += section_len.get(sec, 0.0)
+            for n in notes:
+                b = n["beat"]
+                sec, lo = span[0], 0.0
+                for s_name, s_lo, s_hi in starts:
+                    if s_lo <= b < s_hi or (s_name == starts[-1][0] and b >= s_lo):
+                        sec, lo = s_name, s_lo
+                        break
+                rebased = dict(n, beat=b - lo)
+                drum_notes[track].setdefault(sec, {})[(rebased["pitch"], rebased["beat"])] = rebased
+
+    for track in DRUM_TRACKS:
+        for section, by_key in drum_notes[track].items():
+            notes = sorted(by_key.values(), key=lambda n: (n["beat"], str(n["pitch"])))
             if track in audio:
                 place(section, track, notes_to_cue_clip(notes, SAMPLE_HINTS[track]))
             else:

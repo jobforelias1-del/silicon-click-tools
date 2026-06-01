@@ -117,7 +117,7 @@ def test_build_brief_includes_structure_facts_and_output_instruction(
     assert "4/4" in brief  # time signature rendered as "n/d"
     for name in structure.midi_track_names():
         assert name in brief
-    for scene in structure.scenes:
+    for scene in structure.scene_names():
         assert scene in brief
     # The exact, load-bearing output instruction.
     assert "```yaml" in brief

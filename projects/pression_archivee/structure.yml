@@ -26,17 +26,34 @@ key: Am
 idiom: french_drill
 time_signature: [4, 4]
 
-# Scenes are session rows (a scene's index is its arrangement clip-slot). The beat
-# positions are arrangement-timeline cues from the blueprint @142 BPM, informational
-# only:  INTRO@0  VERSE 1@38  PRE-CHORUS@114  CHORUS@142  VERSE 2@180  BRIDGE@256  OUTRO@304
+# Sequential scene model (Mistral Q16-Q23). Each scene declares its length in
+# beats and what follows; absolute beat positions are COMPUTED, not authored.
+# repeat_count maps directly to the native .als LoopIterations (Phase 1 finding).
+# Every section plays once and follows to Next; OUTRO Stops. (Lengths @142 BPM:
+# INTRO 38, VERSE 1 76, PRE-CHORUS 28, CHORUS 38, VERSE 2 76, BRIDGE 48, OUTRO 38.)
+enable_follow_actions: true
 scenes:
-  - INTRO
-  - "VERSE 1"
-  - PRE-CHORUS
-  - CHORUS
-  - "VERSE 2"
-  - BRIDGE
-  - OUTRO
+  - name: INTRO
+    length: 38
+    follow_action_a: Next
+  - name: "VERSE 1"
+    length: 76
+    follow_action_a: Next
+  - name: PRE-CHORUS
+    length: 28
+    follow_action_a: Next
+  - name: CHORUS
+    length: 38
+    follow_action_a: Next
+  - name: "VERSE 2"
+    length: 76
+    follow_action_a: Next
+  - name: BRIDGE
+    length: 48
+    follow_action_a: Next
+  - name: OUTRO
+    length: 38
+    follow_action_a: Stop
 
 tracks:
   # ── DRUMS group (color 6) ────────────────────────────────────────────────

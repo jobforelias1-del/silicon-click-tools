@@ -9,7 +9,9 @@ from sc_produce.models import (
     ArrangementSpec,
     ClipSpec,
     CueSpec,
+    FollowAction,
     NoteSpec,
+    SceneSpec,
     SendSpec,
     StructureSpec,
     TrackSpec,
@@ -126,3 +128,45 @@ def test_clip_can_hold_cues():
     assert clip.notes == []
     assert len(clip.cues) == 1
     assert clip.cues[0].sample == "clap_01"
+
+
+def test_bare_scene_names_are_coerced():
+    """The positional form (a list of strings) still loads as SceneSpec objects."""
+    s = StructureSpec(scenes=["Intro", "Verse"])
+    assert all(isinstance(sc, SceneSpec) for sc in s.scenes)
+    assert s.scene_names() == ["Intro", "Verse"]
+    # Defaults: plays once, follows to Next.
+    assert s.scenes[0].repeat_count == 1
+    assert s.scenes[0].follow_action_a is FollowAction.NEXT
+
+
+def test_sequential_scene_fields_load():
+    s = StructureSpec(
+        scenes=[
+            {"name": "A", "length": 16.0, "follow_action_a": "Next"},
+            {"name": "B", "length": 32.0, "repeat_count": 2, "follow_action_a": "Stop"},
+        ]
+    )
+    assert s.scene("B").repeat_count == 2
+    assert s.scene("B").follow_action_a is FollowAction.STOP
+    assert s.scene("missing") is None
+
+
+def test_scene_start_beat_is_computed():
+    s = StructureSpec(
+        scenes=[
+            {"name": "A", "length": 16.0},
+            {"name": "B", "length": 32.0, "repeat_count": 2},  # occupies 64 beats
+            {"name": "C", "length": 8.0},
+        ]
+    )
+    assert s.scene_start_beat("A") == 0.0
+    assert s.scene_start_beat("B") == 16.0
+    assert s.scene_start_beat("C") == 16.0 + 64.0
+    assert s.scene_start_beat("missing") is None
+
+
+def test_scene_start_beat_none_when_length_missing():
+    s = StructureSpec(scenes=[{"name": "A"}, {"name": "B", "length": 8.0}])
+    # A has no length -> B's position can't be computed.
+    assert s.scene_start_beat("B") is None

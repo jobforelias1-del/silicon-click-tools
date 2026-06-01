@@ -20,6 +20,7 @@ from sc_produce.models import (
     ClipSpec,
     CueSpec,
     NoteSpec,
+    SceneSpec,
     StructureSpec,
 )
 from sc_produce.report import Report, Severity
@@ -280,7 +281,7 @@ def test_clean_arrangement_against_structure_passes(structure: StructureSpec) ->
     """A full, valid MIDI grid against the structure has no error findings."""
     note = NoteSpec(pitch="C1", start=0.0, duration=0.25, velocity=100)
     scenes: dict[str, dict[str, ClipSpec]] = {}
-    for scene in structure.scenes:
+    for scene in structure.scene_names():
         scenes[scene] = {track: ClipSpec(notes=[note]) for track in structure.midi_track_names()}
     arrangement = ArrangementSpec(scenes=scenes)
 
@@ -391,6 +392,96 @@ def test_cue_value_violations_are_errors(structure: StructureSpec) -> None:
 
 
 # --------------------------------------------------------------------------- #
+# Sequential scene checks (Decisions #2 and #4)
+# --------------------------------------------------------------------------- #
+def _seq_structure(**scene_overrides: dict) -> StructureSpec:
+    """A two-track structure with sequential scenes for sequence-check tests."""
+    from sc_produce.models import TrackSpec, TrackType
+
+    scenes = [
+        {"name": "INTRO", "length": 16.0, "follow_action_a": "Next"},
+        {"name": "DROP", "length": 16.0, "follow_action_a": "Stop"},
+    ]
+    return StructureSpec(
+        tracks=[TrackSpec(name="D_kick", type=TrackType.MIDI)],
+        scenes=scenes,
+    )
+
+
+def test_jump_without_target_is_error() -> None:
+    """A scene whose follow action is Jump but has no target is an error."""
+    structure = StructureSpec(
+        scenes=[SceneSpec(name="A", length=16.0, follow_action_a="Jump")],
+    )
+    report = audit_project(ArrangementSpec(), structure)
+    assert report.passed is False
+    assert any("is Jump but no jump_target" in msg for msg in _errors(report))
+
+
+def test_jump_to_unknown_scene_is_error() -> None:
+    """A jump target that names no existing scene is an error."""
+    structure = StructureSpec(
+        scenes=[SceneSpec(name="A", length=16.0, follow_action_a="Jump", jump_target_a="Z")],
+    )
+    report = audit_project(ArrangementSpec(), structure)
+    assert report.passed is False
+    assert any("jump target 'Z' is not an existing scene" in msg for msg in _errors(report))
+
+
+def test_jump_to_existing_scene_is_clean() -> None:
+    """A jump target that resolves to a real scene is accepted."""
+    structure = StructureSpec(
+        scenes=[
+            SceneSpec(name="A", length=16.0, follow_action_a="Jump", jump_target_a="B"),
+            SceneSpec(name="B", length=16.0, follow_action_a="Stop"),
+        ],
+    )
+    report = audit_project(ArrangementSpec(), structure)
+    assert report.passed is True
+
+
+def test_non_positive_scene_length_is_error() -> None:
+    """A scene with a non-positive length is an error."""
+    structure = StructureSpec(scenes=[SceneSpec(name="A", length=0.0)])
+    report = audit_project(ArrangementSpec(), structure)
+    assert report.passed is False
+    assert any("length must be > 0" in msg for msg in _errors(report))
+
+
+def test_note_beyond_scene_length_is_error() -> None:
+    """A note starting at/after its scene's length is a section-overflow error."""
+    structure = _seq_structure()
+    arrangement = ArrangementSpec(
+        scenes={
+            "INTRO": {
+                "D_kick": ClipSpec(
+                    notes=[NoteSpec(pitch="C1", start=20.0, duration=0.25, velocity=100)]
+                )
+            }
+        }
+    )
+    report = audit_project(arrangement, structure)
+    assert report.passed is False
+    assert any("beyond scene INTRO length 16.0" in msg for msg in _errors(report))
+
+
+def test_note_within_scene_length_is_clean() -> None:
+    """A note inside its scene's length does not trip the overflow check."""
+    structure = _seq_structure()
+    arrangement = ArrangementSpec(
+        scenes={
+            "INTRO": {
+                "D_kick": ClipSpec(
+                    notes=[NoteSpec(pitch="C1", start=8.0, duration=0.25, velocity=100)]
+                )
+            }
+        }
+    )
+    report = audit_project(arrangement, structure)
+    assert not any("beyond scene" in msg for msg in _errors(report))
+
+
+# --------------------------------------------------------------------------- #
 # Completeness checks
 # --------------------------------------------------------------------------- #
 def test_incomplete_grid_warns_for_missing_cells(
@@ -461,7 +552,7 @@ def clean_arrangement(structure: StructureSpec) -> ArrangementSpec:
     note = NoteSpec(pitch="C1", start=0.0, duration=0.25, velocity=100)
     scenes = {
         scene: {track: ClipSpec(notes=[note]) for track in structure.midi_track_names()}
-        for scene in structure.scenes
+        for scene in structure.scene_names()
     }
     return ArrangementSpec(title="clean", scenes=scenes)
 

@@ -306,7 +306,8 @@ def _scaffold_scenes(
     planned: list[tuple[int, str]] = []
     creates_so_far = 0
 
-    for name in structure.scenes:
+    for scene_spec in structure.scenes:
+        name = scene_spec.name
         if name in existing:
             report.ok("scene exists, skipped", scene=name)
             continue
