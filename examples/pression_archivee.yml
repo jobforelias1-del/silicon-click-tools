@@ -1,0 +1,112 @@
+# Pression Archivée — STRUCTURE spec (the Live skeleton)
+#
+# LESSON (the bug this whole tool exists to prevent):
+#   On the first manual run, seven tracks that actually held MIDI were created as
+#   `type: audio`. Audio tracks cannot hold MIDI clips, so every authored note was
+#   silently dropped at apply time.
+#
+#   The rule, encoded below and enforced by `sc-produce audit`:
+#     * Every track that holds notes (drums, bass, keys, leads, pads) is `type: midi`.
+#     * Only GENUINELY recorded textures (room tone, vinyl, field recordings) are
+#       `type: audio`. They never receive a clip from the arrangement.
+#
+#   Run `sc-produce audit examples/pression_archivee.arrangement.yml \
+#       --structure examples/pression_archivee.yml` and it passes clean.
+
+title: Pression Archivée
+bpm: 142
+key: Am
+idiom: french_drill
+time_signature: [4, 4]
+
+tracks:
+  # --- Drums (MIDI: programmed in a drum rack / sampler) -------------------
+  - name: D_kick
+    type: midi
+    instrument: drum_rack:808_core
+    color: 1
+  - name: D_clap
+    type: midi
+    instrument: drum_rack:808_core
+    color: 2
+  - name: D_rim
+    type: midi
+    instrument: drum_rack:808_core
+    color: 2
+  - name: D_hat
+    type: midi
+    instrument: drum_rack:808_core
+    color: 3
+  - name: D_openhat
+    type: midi
+    instrument: drum_rack:808_core
+    color: 3
+  - name: D_808
+    type: midi
+    instrument: operator:sub_808
+    color: 4
+
+  # --- Melodic / harmonic (MIDI) ------------------------------------------
+  - name: K_piano
+    type: midi
+    instrument: grand_piano:dark_felt
+    color: 5
+  - name: K_bells
+    type: midi
+    instrument: operator:glass_bell
+    color: 6
+  - name: P_pad
+    type: midi
+    instrument: wavetable:noir_pad
+    color: 7
+  - name: L_lead
+    type: midi
+    instrument: operator:plucked_lead
+    color: 8
+
+  # --- Recorded textures (AUDIO: real audio, never holds MIDI) -------------
+  - name: A_server_hum
+    type: audio
+    instrument: recording:server_room_hum
+    color: 12
+  - name: A_vinyl_crackle
+    type: audio
+    instrument: recording:vinyl_crackle_loop
+    color: 12
+  - name: A_field_paris
+    type: audio
+    instrument: recording:field_paris_metro
+    color: 12
+
+returns:
+  - name: R_REVERB
+    type: return
+    instrument: reverb:dark_hall
+  - name: R_DELAY
+    type: return
+    instrument: delay:dotted_8th
+  - name: R_DRIVE
+    type: return
+    instrument: saturator:tape_drive
+
+sends:
+  - from: K_piano
+    to: R_REVERB
+    level: 0.10
+  - from: K_bells
+    to: R_DELAY
+    level: 0.18
+  - from: P_pad
+    to: R_REVERB
+    level: 0.22
+  - from: L_lead
+    to: R_DELAY
+    level: 0.12
+  - from: D_808
+    to: R_DRIVE
+    level: 0.15
+  - from: K_bells
+    to: R_REVERB
+    level: 0.14
+
+scenes: [Intro, Verse, Pre, Drop, Break, Outro]
