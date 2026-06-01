@@ -1,12 +1,12 @@
 # Follow Actions
 
 *The richest single concept in the recon (8 of the 34 top-relevance findings)
-and also the most OCR-damaged section.* Follow Actions are central to SC's
-scene/clip-cue work and to `.als` injection, so this hub is high-priority — but
-see the **source-gap callout** below: the exact wording of two options
-(*Previous*, *Next*) is damaged in the ABBYY/OCR source and is pending a
-targeted PDF backfill. Behaviour described from the intact surrounding text is
-reliable; the *exact option labels* for those two are not yet confirmed.
+and the most OCR-damaged section.* Follow Actions are central to SC's
+scene/clip-cue work and to `.als` injection, so this hub is high-priority. The
+section's **option list** was the worst-hit by OCR, so the authoritative
+ten-option set is reproduced from the 16.7 PDF in the **"The ten Follow
+Actions"** table below; the recon **Findings** beneath it keep their
+byte-for-byte quotes as the audit anchor.
 
 Mental model: a **group** is successive non-empty clip slots in one track; each
 clip can carry **two** actions (A/B) with **Chance** weights; timing is the
@@ -14,20 +14,34 @@ clip can carry **two** actions (A/B) with **Chance** weights; timing is the
 **global** quantization but obey **clip** quantization; and scene Follow Actions
 take precedence over clip ones once triggered.
 
-> [!warning] Source gap — verify exact option wording before relying on it
-> The ABBYY/OCR pass fragmented the Follow Action **option list** in section
-> 16.7. Two entries are damaged in source:
->
-> - **"Previous"** — `16. Launching Clips :: 16.7 Follow Actions :: 12` —
->   recon captured only `|* Previous-^] triggers`.
-> - **"Next"** — `16. Launching Clips :: 16.7 Follow Actions :: 14` —
->   recon captured only `rs the next clip down` (the start of the entry is
->   dropped).
->
-> The *behaviour* of these actions is described by surrounding intact text, but
-> the **exact labels/wording are unconfirmed**. A targeted backfill from the
-> 16.7 PDF pages is pending (Elias to supply). Until then: do not treat the
-> precise option text as ground truth — confirm against Live's UI.
+## The ten Follow Actions (authoritative — PDF backfill)
+
+> [!note] Option list backfilled from the 16.7 PDF (2026-06-01)
+> The recon fragmented this list. Of the ten actions the manual lists, it
+> captured six (two — *Previous*, *Next* — damaged) and omitted four
+> (*Play Again*, *First*, *Last*, *Any*) entirely. The table below is the
+> clean manual text from the 16.7 PDF (Ableton Reference Manual Version 12, pp. 353-355), supplied 2026-06-01. The recon quotes under
+> **Findings** stay byte-for-byte as the audit anchor — this is a
+> separately sourced layer. Labels are Live 12's UI names (rendered as
+> images in the manual, so absent from the PDF text layer); descriptions
+> are verbatim (quotes lightly normalised; raw extract in `_source/`).
+
+The manual: *“There are ten Follow Actions available:”*
+
+| # | Follow Action | What it does (verbatim) | Recon coverage |
+|---|---|---|---|
+| 1 | **No Action** | means that no Follow Action will occur. Once a clip has been triggered with No Action, any other selected Follow Action in the clip will no longer have a chance of occurring, even if its Follow Action Chance is set to 100%. | ✓ recon `:: 9` |
+| 2 | **Stop** | simply stops the clip after it has played for the chosen Follow Action Time. Note that this overrides clip loop/region settings. | ✓ recon `:: 10` |
+| 3 | **Play Again** | restarts the clip. | ✗ recon omitted |
+| 4 | **Previous** | triggers the previous clip (the one above the current one). | ⚠ recon `:: 12` damaged |
+| 5 | **Next** | triggers the next clip down in the group. If a clip with this setting is last in a group, this Follow Action triggers the first clip. | ⚠ recon `:: 14` damaged |
+| 6 | **First** | launches the first (top) clip in a group. | ✗ recon omitted |
+| 7 | **Last** | launches the last (bottom) clip in a group. | ✗ recon omitted |
+| 8 | **Any** | plays any clip in the group. | ✗ recon omitted |
+| 9 | **Other** | is similar to "Any," but as long as the current clip is not alone in the group, no clip will play consecutively. | ✓ recon `:: 20` |
+| 10 | **Jump** | lets you select a target clip slot or scene for the Follow Action to jump to. When Jump is selected, a Jump Target slider appears next to the Follow Action chooser. To adjust target clip slot or scene value, drag the Jump Target slider up or down, or click and type in a number. | ✓ recon `:: 21` |
+
+*Recon coverage of the option list: 4 clean, 2 damaged, 4 omitted, of 10 — which is why this backfill was needed. The behaviour described in **Findings** below is unaffected; only the option-label wording was in doubt.*
 
 
 ## Findings

@@ -13,6 +13,11 @@ read-me) is authored here; the *entries* are rendered from the data. Because
 both the constraint digest and the hubs are generated from one source, the
 quote duplication between them cannot drift.
 
+One fenced exception to the "recon-only" rule: the Follow Action *option list*
+(section 16.7) is backfilled from a PDF Elias supplied, rendered by
+build_follow_action_section() as a clearly-labelled separate layer. The recon
+JSONL is still never edited, so the byte-for-byte audit anchor stays intact.
+
 Run:  python3 build_corpus.py        # reads the JSONL next to this file,
                                       # writes ../  (the "Live Knowledge" folder)
 """
@@ -25,6 +30,13 @@ OUT = HERE.parent                      # the "Live Knowledge" folder
 CONCEPTS = OUT / "Concepts"
 
 LIVE_VERSION = "Live 12"
+# The supplied 16.7 PDF self-identifies (PDF metadata title) as "Ableton
+# Reference Manual Version 12" — no point release — with section 16.7 on manual
+# pages 353-355. Point release left unpinned (Elias to confirm).
+MANUAL_VERSION_NOTE = (
+    'the supplied 16.7 PDF self-identifies (metadata) as "Ableton Reference '
+    'Manual Version 12" with no point release'
+)
 
 # ---------------------------------------------------------------------------
 # Load
@@ -72,6 +84,90 @@ def entry(loc: str, *, seealso: list[str] | None = None) -> str:
 def render_entries(locs: list[str], seealso_map: dict[str, list[str]] | None = None) -> str:
     seealso_map = seealso_map or {}
     return "\n".join(entry(l, seealso=seealso_map.get(l)) for l in locs)
+
+# ---------------------------------------------------------------------------
+# PDF backfill — the authoritative Follow Action option list (section 16.7).
+#
+# Deliberately separate from the recon JSONL. The recon fragmented this list
+# (OCR/table damage): of the ten actions it captured six — two of them
+# (*Previous*, *Next*) damaged — and omitted four (*Play Again*, *First*,
+# *Last*, *Any*) entirely. Those recon entries stay byte-for-byte in the JSONL
+# as Codex's audit anchor; THIS table is the clean manual text from the 16.7 PDF
+# Elias supplied (pp. 353-355, 2026-06-01). The option *labels* are inline
+# UI-chip images in the manual, so they are absent from the PDF text layer — the
+# descriptions below are verbatim from that text layer (quotes lightly
+# normalised; the raw extract, doubled curly quotes and all, is in
+# _source/live12_16.7_follow_actions.pdf.txt). Labels are Live 12 UI names, in
+# manual order.
+# ---------------------------------------------------------------------------
+FA_PDF_SOURCE = "16.7 PDF (Ableton Reference Manual Version 12, pp. 353-355), supplied 2026-06-01"
+FA_PDF_INTRO = "There are ten Follow Actions available:"
+
+# (label, verbatim description, recon-coverage status, recon locator tail)
+FOLLOW_ACTIONS = [
+    ("No Action", "means that no Follow Action will occur. Once a clip has been triggered with No Action, any other selected Follow Action in the clip will no longer have a chance of occurring, even if its Follow Action Chance is set to 100%.", "ok", "9"),
+    ("Stop", "simply stops the clip after it has played for the chosen Follow Action Time. Note that this overrides clip loop/region settings.", "ok", "10"),
+    ("Play Again", "restarts the clip.", "missing", None),
+    ("Previous", "triggers the previous clip (the one above the current one).", "damaged", "12"),
+    ("Next", "triggers the next clip down in the group. If a clip with this setting is last in a group, this Follow Action triggers the first clip.", "damaged", "14"),
+    ("First", "launches the first (top) clip in a group.", "missing", None),
+    ("Last", "launches the last (bottom) clip in a group.", "missing", None),
+    ("Any", "plays any clip in the group.", "missing", None),
+    ("Other", 'is similar to "Any," but as long as the current clip is not alone in the group, no clip will play consecutively.', "ok", "20"),
+    ("Jump", "lets you select a target clip slot or scene for the Follow Action to jump to. When Jump is selected, a Jump Target slider appears next to the Follow Action chooser. To adjust target clip slot or scene value, drag the Jump Target slider up or down, or click and type in a number.", "ok", "21"),
+]
+
+_FA_COVERAGE = {
+    "ok":      lambda loc: f"✓ recon `:: {loc}`",
+    "damaged": lambda loc: f"⚠ recon `:: {loc}` damaged",
+    "missing": lambda loc: "✗ recon omitted",
+}
+
+def build_follow_action_section() -> str:
+    """The authoritative ten-option Follow Action table (PDF backfill layer).
+
+    Kept separate from the recon JSONL: the recon entries stay byte-for-byte
+    (OCR artifacts intact) as Codex's audit anchor, while this table is the
+    clean manual text from the 16.7 PDF. Labels are Live 12 UI names (inline
+    images in the manual, absent from the PDF text layer); descriptions are
+    verbatim (quotes lightly normalised — raw in _source/*.pdf.txt).
+    """
+    cov = collections.Counter(status for _, _, status, _ in FOLLOW_ACTIONS)
+    callout = "\n".join([
+        "> [!note] Option list backfilled from the 16.7 PDF (2026-06-01)",
+        "> The recon fragmented this list. Of the ten actions the manual lists, it",
+        "> captured six (two — *Previous*, *Next* — damaged) and omitted four",
+        "> (*Play Again*, *First*, *Last*, *Any*) entirely. The table below is the",
+        f"> clean manual text from the {FA_PDF_SOURCE}. The recon quotes under",
+        "> **Findings** stay byte-for-byte as the audit anchor — this is a",
+        "> separately sourced layer. Labels are Live 12's UI names (rendered as",
+        "> images in the manual, so absent from the PDF text layer); descriptions",
+        "> are verbatim (quotes lightly normalised; raw extract in `_source/`).",
+    ])
+    rows = [
+        "| # | Follow Action | What it does (verbatim) | Recon coverage |",
+        "|---|---|---|---|",
+    ]
+    for i, (label, desc, status, loc) in enumerate(FOLLOW_ACTIONS, 1):
+        rows.append(f"| {i} | **{label}** | {desc} | {_FA_COVERAGE[status](loc)} |")
+    footer = (
+        f"*Recon coverage of the option list: {cov['ok']} clean, {cov['damaged']} "
+        f"damaged, {cov['missing']} omitted, of 10 — which is why this backfill "
+        "was needed. The behaviour described in **Findings** below is unaffected; "
+        "only the option-label wording was in doubt.*"
+    )
+    return "\n".join([
+        "## The ten Follow Actions (authoritative — PDF backfill)",
+        "",
+        callout,
+        "",
+        f"The manual: *“{FA_PDF_INTRO}”*",
+        "",
+        *rows,
+        "",
+        footer,
+        "",
+    ])
 
 # ---------------------------------------------------------------------------
 # Concept hubs.  Each: title, authored intro, ordered locator list, see-also.
@@ -137,12 +233,12 @@ read this before assuming Session and Arrangement coexist on a track.""",
     "Follow Actions": {
         "intro": """\
 *The richest single concept in the recon (8 of the 34 top-relevance findings)
-and also the most OCR-damaged section.* Follow Actions are central to SC's
-scene/clip-cue work and to `.als` injection, so this hub is high-priority — but
-see the **source-gap callout** below: the exact wording of two options
-(*Previous*, *Next*) is damaged in the ABBYY/OCR source and is pending a
-targeted PDF backfill. Behaviour described from the intact surrounding text is
-reliable; the *exact option labels* for those two are not yet confirmed.
+and the most OCR-damaged section.* Follow Actions are central to SC's
+scene/clip-cue work and to `.als` injection, so this hub is high-priority. The
+section's **option list** was the worst-hit by OCR, so the authoritative
+ten-option set is reproduced from the 16.7 PDF in the **"The ten Follow
+Actions"** table below; the recon **Findings** beneath it keep their
+byte-for-byte quotes as the audit anchor.
 
 Mental model: a **group** is successive non-empty clip slots in one track; each
 clip can carry **two** actions (A/B) with **Chance** weights; timing is the
@@ -166,22 +262,7 @@ take precedence over clip ones once triggered.""",
             "16. Launching Clips :: 16.3 Legato Mode :: 7",
         ],
         "seealso": ["Session vs Arrangement", "Tempo, Warp & Sync", "Hard Constraints"],
-        "gap_callout": """\
-> [!warning] Source gap — verify exact option wording before relying on it
-> The ABBYY/OCR pass fragmented the Follow Action **option list** in section
-> 16.7. Two entries are damaged in source:
->
-> - **"Previous"** — `16. Launching Clips :: 16.7 Follow Actions :: 12` —
->   recon captured only `|* Previous-^] triggers`.
-> - **"Next"** — `16. Launching Clips :: 16.7 Follow Actions :: 14` —
->   recon captured only `rs the next clip down` (the start of the entry is
->   dropped).
->
-> The *behaviour* of these actions is described by surrounding intact text, but
-> the **exact labels/wording are unconfirmed**. A targeted backfill from the
-> 16.7 PDF pages is pending (Elias to supply). Until then: do not treat the
-> precise option text as ground truth — confirm against Live's UI.
-""",
+        "backfill": True,
     },
     "Tempo, Warp & Sync": {
         "intro": """\
@@ -390,6 +471,9 @@ def build_hard_constraints(hc):
 # ---------------------------------------------------------------------------
 def build_hub(name, h):
     parts = [f"# {name}", "", h["intro"], ""]
+    if h.get("backfill"):
+        parts.append(build_follow_action_section())
+        parts.append("")
     if h.get("gap_callout"):
         parts.append(h["gap_callout"])
         parts.append("")
@@ -466,15 +550,17 @@ The corpus is sorted and structured around it.
 2. **Don't invent.** Nothing here was written from model memory of Ableton; it
    all traces to the recon. Keep it that way — if it's not in the corpus and not
    in the source, say so rather than guessing.
-3. **Respect the gaps.** Where a `source_gap` callout appears (notably the
-   *Previous*/*Next* options in [[Follow Actions]]), do **not** treat the exact
-   wording as confirmed.
+3. **Respect the gaps.** Where a `source_gap` callout appears, do **not** treat
+   the exact wording as confirmed. (The Follow Action *option list* — the
+   biggest gap — has since been backfilled from the 16.7 PDF; see the table in
+   [[Follow Actions]]. The recon's damaged/omitted entries are retained as the
+   audit anchor, not overwritten.)
 
 ## Provenance & reproducibility
 
-- Manual version: **Live 12**. The exact point release is not yet pinned —
-  Elias to confirm; the two `version_sensitive` findings reference the Live 11
-  boundary.
+- Manual version: **Live 12** — {MANUAL_VERSION_NOTE}; section 16.7 sits on
+  manual pp. 353-355. The exact point release is not yet pinned — Elias to
+  confirm; the two `version_sensitive` findings reference the Live 11 boundary.
 - Source of record: `_source/live12_manual_recon_findings.jsonl` (Codex's recon;
   201 findings, 199 `high` / 2 `medium` confidence). Distribution:
   {kinds['hard_constraint']} hard_constraint, {kinds['schema_element']} schema_element,
@@ -485,8 +571,11 @@ The corpus is sorted and structured around it.
   rendered from the data, not retyped, so Codex's later audit is a clean
   string-level check. All cross-links are authored synthesis (the recon has zero
   `cross_reference` findings).
-- **No web, no PDF** were consulted building this. Same source discipline as the
-  recon, so the audit stays a real triangulation.
+- **One backfill, clearly fenced.** The recon layer consulted no web or PDF, and
+  still doesn't. The single exception is the **Follow Action option table** in
+  [[Follow Actions]], reproduced from the 16.7 PDF Elias supplied (raw text in
+  `_source/live12_16.7_follow_actions.pdf.txt`) and kept as a separate layer so
+  the recon quotes stay a clean triangulation anchor.
 
 ## Staging note
 
@@ -514,6 +603,8 @@ Map of content for the SC Live Knowledge corpus. New here? → [[README]].
 
 ## Provenance
 - `_source/live12_manual_recon_findings.jsonl` — Codex's recon (201 findings).
+- `_source/live12_16.7_follow_actions.pdf.txt` — 16.7 PDF text; source for the
+  Follow Action option-list backfill (see [[Follow Actions]]).
 - `_source/build_corpus.py` — regenerates this Tier 1 layer from the JSONL.
 """
 

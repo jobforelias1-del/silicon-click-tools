@@ -16,4 +16,6 @@ Map of content for the SC Live Knowledge corpus. New here? → [[README]].
 
 ## Provenance
 - `_source/live12_manual_recon_findings.jsonl` — Codex's recon (201 findings).
+- `_source/live12_16.7_follow_actions.pdf.txt` — 16.7 PDF text; source for the
+  Follow Action option-list backfill (see [[Follow Actions]]).
 - `_source/build_corpus.py` — regenerates this Tier 1 layer from the JSONL.

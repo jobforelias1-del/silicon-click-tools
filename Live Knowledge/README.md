@@ -60,15 +60,17 @@ The corpus is sorted and structured around it.
 2. **Don't invent.** Nothing here was written from model memory of Ableton; it
    all traces to the recon. Keep it that way — if it's not in the corpus and not
    in the source, say so rather than guessing.
-3. **Respect the gaps.** Where a `source_gap` callout appears (notably the
-   *Previous*/*Next* options in [[Follow Actions]]), do **not** treat the exact
-   wording as confirmed.
+3. **Respect the gaps.** Where a `source_gap` callout appears, do **not** treat
+   the exact wording as confirmed. (The Follow Action *option list* — the
+   biggest gap — has since been backfilled from the 16.7 PDF; see the table in
+   [[Follow Actions]]. The recon's damaged/omitted entries are retained as the
+   audit anchor, not overwritten.)
 
 ## Provenance & reproducibility
 
-- Manual version: **Live 12**. The exact point release is not yet pinned —
-  Elias to confirm; the two `version_sensitive` findings reference the Live 11
-  boundary.
+- Manual version: **Live 12** — the supplied 16.7 PDF self-identifies (metadata) as "Ableton Reference Manual Version 12" with no point release; section 16.7 sits on
+  manual pp. 353-355. The exact point release is not yet pinned — Elias to
+  confirm; the two `version_sensitive` findings reference the Live 11 boundary.
 - Source of record: `_source/live12_manual_recon_findings.jsonl` (Codex's recon;
   201 findings, 199 `high` / 2 `medium` confidence). Distribution:
   61 hard_constraint, 65 schema_element,
@@ -79,8 +81,11 @@ The corpus is sorted and structured around it.
   rendered from the data, not retyped, so Codex's later audit is a clean
   string-level check. All cross-links are authored synthesis (the recon has zero
   `cross_reference` findings).
-- **No web, no PDF** were consulted building this. Same source discipline as the
-  recon, so the audit stays a real triangulation.
+- **One backfill, clearly fenced.** The recon layer consulted no web or PDF, and
+  still doesn't. The single exception is the **Follow Action option table** in
+  [[Follow Actions]], reproduced from the 16.7 PDF Elias supplied (raw text in
+  `_source/live12_16.7_follow_actions.pdf.txt`) and kept as a separate layer so
+  the recon quotes stay a clean triangulation anchor.
 
 ## Staging note
 
