@@ -38,10 +38,15 @@ sc_produce = ["templates/*.md"]
 [tool.black]
 line-length = 100
 target-version = ["py310"]
+# "Live Knowledge/" is staged Obsidian-vault content plus its one-off generator,
+# not part of the sc_produce package; it is not formatted as pipeline code.
+extend-exclude = "Live Knowledge/"
 
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+# See note under [tool.black]: staged vault content, not linted as pipeline code.
+extend-exclude = ["Live Knowledge"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP", "B"]
