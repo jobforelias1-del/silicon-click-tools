@@ -121,6 +121,28 @@ scene, scene lengths must be > 0 (degenerate total flagged), and a note may not
 start at/after its scene's length. Field names map to the `.als` follow-action
 schema Phase 1 confirmed (see Decision #1).
 
+## Decision 5 — audio cues resolve to project-local `samples/` (Elias, 2026-06-01)
+
+A `CueSpec.sample` is a hint, not a path. It resolves against:
+
+```
+projects/<project>/samples/<hint>.<ext>
+```
+
+- **Extension-agnostic** (`.wav`, `.aif`, `.mp3`, …): match `<hint>.*`.
+- **Fail gracefully:** a hint that resolves to no file is a **warn + skip the
+  cue**, never an abort of the apply pass (same posture as a bad cell).
+- **The project folder is the canonical sample home.** Projects are
+  self-contained and portable — stemming, archiving, and remix must not depend on
+  which external drive is mounted. The Splice library (or any source) is where
+  fresh sounds are *pulled from*, but a project copies files *into* its own
+  `samples/` before apply-time; apply never reaches outside the project.
+- **Manifest layer is optional** — a future `samples/` manifest could pin
+  versions, but is not required.
+
+This is implemented by the Phase 3 bridge cue-loader (see
+[`../briefs/phase3_bridge_session_2026-06-01.md`](../briefs/phase3_bridge_session_2026-06-01.md)).
+
 ---
 
 See also: [pipeline-doctrine.md](pipeline-doctrine.md) ·

@@ -107,22 +107,41 @@ the six (b) tracks (`F_riser`, `F_impact`, `F_transition`, `D_clap`, `D_perc`,
 target clip slot is the scene's index in the structure (same rule the MIDI apply
 uses); the audio track is the cell's track.
 
-**The two real unknowns — settle these before building:**
-1. **Sample resolution.** `CueSpec.sample` is a *hint*, not a path. Where do the
-   files live (the 30TB drive? a project samples dir?), and how does a hint map to
-   a file? Propose a resolver (e.g. a `samples/` manifest mapping hint → path) and
-   push back if the hint→file mapping needs Elias to define a convention first.
-   **Do not invent file paths.**
-2. **Write path: OSC vs `.als`.** Phase 1 established there's no OSC sample-load.
-   So this is almost certainly `.als` injection too (a clip referencing a sample
-   file in the audio track's clip slot). Confirm the `.als` audio-clip element
-   shape against a real file the same way as Deliverable 1 — *do not* hand-author
-   clip XML from memory.
+**Sample resolution — SETTLED (Elias 2026-06-01): project-local `samples/`.**
+`CueSpec.sample` is a hint, resolved against:
 
-**Deliverable shape:** a bridge function that, given the resolved sample files and
-the arrangement's cue cells, writes audio clips into the right (track, scene-slot)
-positions of an `.als`, honoring `beat`/`length`/`gain_db`; plus a smoke test on a
-scratch set with one or two stub WAVs. Draft PR on the bridge repo.
+```
+projects/<track>/samples/<hint>.<ext>
+```
+
+- **`<track>` is the project name**, not the audio track — i.e. for Pression
+  Archivée the dir is `projects/pression_archivee/samples/`. (The repo path
+  convention is `projects/<project>/`; samples live beside the specs.)
+- **Extension-agnostic:** `.wav`, `.aif`, `.mp3` all accepted; match `<hint>.*`.
+- **Fail gracefully:** a hint that resolves to no file → **warn + skip that cue,
+  do not break the apply pass.** (Same posture as a bad MIDI cell: report, don't
+  abort.)
+- **The project folder is the canonical sample home.** Doctrine: self-contained,
+  portable projects (stemming / archiving / remix don't depend on which drive is
+  mounted). The Splice library is the source of fresh pulls, but a project pulls
+  files *into* `projects/<project>/samples/` before apply-time — apply never
+  reaches outside the project.
+- **Manifest layer:** not required for Phase 3. If you think a `samples/`
+  manifest adds value for version-pinning later, propose it back — optional.
+
+**Remaining unknown to settle before building — write path: OSC vs `.als`.**
+Phase 1 established there's no OSC sample-load. So this is almost certainly `.als`
+injection too (a clip referencing a sample file in the audio track's clip slot).
+Confirm the `.als` audio-clip element shape against a real file the same way as
+Deliverable 1 — *do not* hand-author clip XML from memory.
+
+**Deliverable shape:** a bridge function that, given the arrangement's cue cells
+and the structure, resolves each `CueSpec.sample` against
+`projects/<project>/samples/<hint>.*` (warn+skip on miss), and writes audio clips
+into the right (track, scene-slot) positions of an `.als`, honoring
+`beat`/`length`/`gain_db`; plus a smoke test on a scratch set with one or two stub
+WAVs in a `samples/` dir (and one deliberately-missing hint to prove the
+warn-and-skip path). Draft PR on the bridge repo.
 
 **Note on `beat`:** `CueSpec.beat` is relative to the scene start. If you ever
 need an absolute timeline position, `StructureSpec.scene_start_beat(scene)` in
