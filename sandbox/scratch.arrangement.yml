@@ -1,0 +1,28 @@
+# scratch — ARRANGEMENT (sandbox toy, not load-bearing)
+#
+# One scene authored to get you going. The rest (b, c, d) are empty — fill
+# them, or don't. Cm, C3 = middle C. start/duration in beats.
+
+title: Scratch
+
+scenes:
+  a:
+    kick:
+      length: 4.0
+      notes:
+        - {pitch: "C1", start: 0.0, duration: 0.25, velocity: 110}
+        - {pitch: "C1", start: 1.0, duration: 0.25, velocity: 100}
+        - {pitch: "C1", start: 2.0, duration: 0.25, velocity: 110}
+        - {pitch: "C1", start: 3.0, duration: 0.25, velocity: 100}
+    sub:
+      length: 4.0
+      notes:
+        - {pitch: "C0", start: 0.0, duration: 2.0, velocity: 100}
+        - {pitch: "G0", start: 2.0, duration: 2.0, velocity: 96}
+    keys:
+      length: 4.0
+      notes:
+        # Cm triad, just sitting there. Move it somewhere more interesting.
+        - {pitch: "C3", start: 0.0, duration: 4.0, velocity: 60}
+        - {pitch: "D#3", start: 0.0, duration: 4.0, velocity: 56}
+        - {pitch: "G3", start: 0.0, duration: 4.0, velocity: 58}
