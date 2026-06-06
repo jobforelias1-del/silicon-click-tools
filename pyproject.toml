@@ -38,10 +38,14 @@ sc_produce = ["templates/*.md"]
 [tool.black]
 line-length = 100
 target-version = ["py310"]
+# sandbox/ is a deliberate no-rules play space — not formatted or linted.
+extend-exclude = "sandbox/"
 
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+# sandbox/ is a deliberate no-rules play space — not formatted or linted.
+extend-exclude = ["sandbox"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP", "B"]
