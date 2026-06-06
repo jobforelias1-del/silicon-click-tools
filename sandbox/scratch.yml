@@ -1,0 +1,26 @@
+# scratch — STRUCTURE (sandbox toy, not load-bearing)
+#
+# A tiny skeleton: three tracks, four scenes. Small on purpose so there's
+# almost nothing to stare at. Change anything. Break anything.
+
+title: Scratch
+bpm: 120
+key: Cm
+idiom: whatever
+time_signature: [4, 4]
+
+tracks:
+  - name: kick
+    type: midi
+    instrument: drum_rack:whatever
+    color: 1
+  - name: sub
+    type: midi
+    instrument: operator:sub
+    color: 4
+  - name: keys
+    type: midi
+    instrument: grand_piano:soft
+    color: 5
+
+scenes: [a, b, c, d]

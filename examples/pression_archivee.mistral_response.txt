@@ -1,0 +1,35 @@
+Here's the sliding sub-bass for **Pression Archivée**. I kept `D_808` low and
+legato so the glide between roots reads as one continuous slide: it sits on the
+A minor root through the intro, walks A–F–G under the verse, then drives the
+A–F–C–G hook in the drop. Velocities stay inside 1–127 and everything is in
+A minor at 142 BPM, so it drops straight onto the `D_808` track.
+
+```yaml
+track: D_808
+clips:
+  Intro:
+    length: 8.0
+    notes:
+      - {pitch: "A0", start: 0.0, duration: 4.0, velocity: 92}
+      - {pitch: "A0", start: 4.0, duration: 3.5, velocity: 88}
+  Verse:
+    length: 8.0
+    notes:
+      - {pitch: "A0", start: 0.0, duration: 2.5, velocity: 110}
+      - {pitch: "A0", start: 2.5, duration: 1.5, velocity: 96}
+      - {pitch: "F0", start: 4.0, duration: 2.0, velocity: 108}
+      - {pitch: "G0", start: 6.0, duration: 1.5, velocity: 104}
+      - {pitch: "A0", start: 7.5, duration: 0.5, velocity: 90}
+  Drop:
+    length: 8.0
+    notes:
+      - {pitch: "A0", start: 0.0, duration: 2.0, velocity: 122}
+      - {pitch: "F0", start: 2.0, duration: 2.0, velocity: 116}
+      - {pitch: "C1", start: 4.0, duration: 2.0, velocity: 118}
+      - {pitch: "G0", start: 6.0, duration: 1.5, velocity: 114}
+      - {pitch: "A0", start: 7.5, duration: 0.5, velocity: 100}
+```
+
+Capture this with `sc-produce compose --capture-response` and it will merge into
+the `D_808` column across those three scenes. Want me to author `D_kick` and the
+hats next so the rhythm section lands in the same pass?
